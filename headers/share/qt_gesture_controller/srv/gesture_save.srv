@@ -1,0 +1,8 @@
+# the name of the recorded gesture
+string name
+
+# the path where gesture will be recorded
+string path
+
+---
+bool status

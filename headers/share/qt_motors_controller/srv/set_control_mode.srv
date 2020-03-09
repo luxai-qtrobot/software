@@ -1,0 +1,10 @@
+# constants
+uint8 M_ON=0
+uint8 M_OFF=1
+uint8 M_BREAK=2
+
+# an array of robot parts and/or single joint name (e.g. ['left_arm', 'right_arm', 'HeadPitch'])
+string[] parts
+uint8  mode
+---
+bool status

@@ -1,0 +1,14 @@
+# an array of robot parts (e.g. ['left_arm', 'right_arm'])
+string[] parts
+
+# make parts idle
+bool idleParts
+
+# wait for desired seconds before starting record
+uint8 wait
+
+# max recording time in second
+uint8 timeout
+
+---
+bool status

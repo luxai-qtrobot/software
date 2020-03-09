@@ -1,0 +1,5 @@
+# an array of robot parts and/or single joint name (e.g. ['left_arm', 'right_arm', 'HeadPitch'])
+string[] parts
+uint8  velocity
+---
+bool status

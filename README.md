@@ -1,2 +1,2 @@
-# software
-Debian packages and other libraries 
+# QTrobot Ubunut packages, headers and other libraries
+

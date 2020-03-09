@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: qt_motors_controller
+Description: Description of qt_motors_controller
+Version: 1.1.2
+Cflags: -I/opt/ros/kinetic/include
+Libs: -L/opt/ros/kinetic/lib -lqt_motors_controller -lstd_msgs -lmessage_runtime
+Requires: controller_interface qt_motor

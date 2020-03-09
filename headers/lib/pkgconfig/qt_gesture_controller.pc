@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: qt_gesture_controller
+Description: Description of qt_gesture_controller
+Version: 1.1.4
+Cflags: -I/opt/ros/kinetic/include
+Libs: -L/opt/ros/kinetic/lib -lqt_gesture_controller -lstd_msgs -lmessage_runtime
+Requires: controller_interface qt_motor

@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: qt_robot_interface
+Description: Description of qt_robot_interface
+Version: 1.1.5
+Cflags: -I/opt/ros/kinetic/include
+Libs: -L/opt/ros/kinetic/lib -lqt_robot_interface -lstd_msgs -lmessage_runtime
+Requires: qt_gesture_controller qt_face
