@@ -1,0 +1,1 @@
+rosrun moveit_kinematics create_ikfast_moveit_plugin.py qtrobot left_arm qtrobot_ikfast_left_arm_plugin /home/apaikan/catkin_ws/src/qtrobot_ikfast_left_arm_plugin/src/qtrobot_left_arm_ikfast_solver.cpp

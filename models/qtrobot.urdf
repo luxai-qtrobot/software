@@ -1,0 +1,216 @@
+<?xml version="1.0"?>
+
+<robot name="qtrobot">
+
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+
+  <material name="blue">
+     <color rgba="0 0 0.8 1"/>
+   </material>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.337"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0.1685"/>
+      <material name="blue"/>
+    </visual>
+  </link>
+
+ <!-- Head -->
+  <link name="HeadYaw_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="HeadPitch_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="Camera_link">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.02"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="HeadYaw" type="revolute">
+    <parent link="base_link"/>
+    <child link="HeadYaw_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.338"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="1000" lower="-1.0472" upper="1.0472" velocity="100"/>
+  </joint>
+
+  <joint name="HeadPitch" type="revolute">
+    <parent link="HeadYaw_link"/>
+    <child link="HeadPitch_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0962"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="1000" lower="-0.261799" upper="0.436332" velocity="30"/>
+  </joint>
+
+  <joint name="Camera" type="fixed">
+    <parent link="HeadPitch_link"/>
+    <child link="Camera_link"/>
+    <origin rpy="-1.5708 0 -1.5708" xyz="0.094 0 0.162"/>
+  </joint>
+
+
+  <!-- Right Arm -->
+  <link name="RightShoulderPitch_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="RightShoulderRoll_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 1.5708 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="RightElbowRoll_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 1.5708 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="RightHand_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.02"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="RightShoulderPitch" type="revolute">
+    <parent link="base_link"/>
+    <child link="RightShoulderPitch_link"/>
+    <origin rpy="3.14159 0 0" xyz="0 -0.08 0.396"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="1000" lower="-2.44346" upper="2.44346" velocity="100"/>
+  </joint>
+
+  <joint name="RightShoulderRoll" type="revolute">
+    <parent link="RightShoulderPitch_link"/>
+    <child link="RightShoulderRoll_link"/>
+    <origin rpy="0 -1.5708 0" xyz="0 0.0445 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" lower="-1.309" upper="0.122173" velocity="100"/>
+  </joint>
+
+  <joint name="RightElbowRoll" type="revolute">
+    <parent link="RightShoulderRoll_link"/>
+    <child link="RightElbowRoll_link"/>
+    <origin rpy="0 0 0" xyz="0 0.07708 0"/> -->
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" lower="-1.5708" upper="-0.122173" velocity="100"/>
+  </joint>
+
+  <joint name="RightHand" type="fixed">
+    <parent link="RightElbowRoll_link"/>
+    <child link="RightHand_link"/>
+    <origin rpy="-1.5708 0 1.5708" xyz="0 0.184 0"/>
+  </joint>
+
+  <!-- Left Arm -->
+  <link name="LeftShoulderPitch_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="LeftShoulderRoll_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 1.5708 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="LeftElbowRoll_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.04" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 1.5708 0" xyz="0 0 0"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <link name="LeftHand_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.02"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="LeftShoulderPitch" type="revolute">
+    <parent link="base_link"/>
+    <child link="LeftShoulderPitch_link"/>
+    <origin rpy="0 0 0" xyz="0 0.08 0.396"/> -->
+    <axis xyz="0 1 0"/>
+    <limit effort="1000" lower="-2.44346" upper="2.44346" velocity="100"/>
+  </joint>
+
+  <joint name="LeftShoulderRoll" type="revolute">
+    <parent link="LeftShoulderPitch_link"/>
+    <child link="LeftShoulderRoll_link"/>
+    <origin rpy="0 -1.5708 0" xyz="0 0.0445 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" lower="-1.309" upper="0.122173" velocity="100"/>
+  </joint>
+
+  <joint name="LeftElbowRoll" type="revolute">
+    <parent link="LeftShoulderRoll_link"/>
+    <child link="LeftElbowRoll_link"/>
+    <origin rpy="0 0 0" xyz="0 0.07708 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" lower="-1.5708" upper="-0.122173" velocity="100"/>
+  </joint>
+
+  <joint name="LeftHand" type="fixed">
+    <parent link="LeftElbowRoll_link"/>
+    <child link="LeftHand_link"/>
+    <origin rpy="-1.5708 0 1.5708" xyz="0 0.184 0"/>
+  </joint>
+
+</robot>
