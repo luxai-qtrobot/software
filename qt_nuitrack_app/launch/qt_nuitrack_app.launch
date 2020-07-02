@@ -1,0 +1,8 @@
+<launch>
+  <node name="qt_nuitrack_app" pkg="qt_nuitrack_app" type="qt_nuitrack_app" output="screen" respawn="true">
+  <param name="main_frame_rate" value="30"/>
+  <param name="face_frame_rate" value="2"/>
+  <param name="image_width" value="640"/>
+  <param name="image_height" value="480"/>
+  </node>
+</launch>
