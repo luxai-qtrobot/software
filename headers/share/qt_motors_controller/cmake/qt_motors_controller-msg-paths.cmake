@@ -1,4 +1,4 @@
-# generated from genmsg/cmake/pkg-msg-paths.cmake.installspace.in
+# generated from genmsg/cmake/pkg-msg-paths.cmake.develspace.in
 
-_prepend_path("${qt_motors_controller_DIR}/.." "msg" qt_motors_controller_MSG_INCLUDE_DIRS UNIQUE)
+set(qt_motors_controller_MSG_INCLUDE_DIRS "/home/qtrobot/catkin_ws/src/qt_hardware_interface/controllers/qt_motors_controller/msg")
 set(qt_motors_controller_MSG_DEPENDENCIES std_msgs)

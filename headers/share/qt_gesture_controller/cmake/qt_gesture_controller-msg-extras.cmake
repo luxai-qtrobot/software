@@ -1,2 +1,2 @@
 set(qt_gesture_controller_MESSAGE_FILES "")
-set(qt_gesture_controller_SERVICE_FILES "srv/gesture_record.srv;srv/gesture_save.srv;srv/gesture_stop.srv;srv/gesture_play.srv;srv/gesture_list.srv")
+set(qt_gesture_controller_SERVICE_FILES "/home/qtrobot/catkin_ws/src/qt_hardware_interface/controllers/qt_gesture_controller/srv/gesture_record.srv;/home/qtrobot/catkin_ws/src/qt_hardware_interface/controllers/qt_gesture_controller/srv/gesture_save.srv;/home/qtrobot/catkin_ws/src/qt_hardware_interface/controllers/qt_gesture_controller/srv/gesture_stop.srv;/home/qtrobot/catkin_ws/src/qt_hardware_interface/controllers/qt_gesture_controller/srv/gesture_play.srv;/home/qtrobot/catkin_ws/src/qt_hardware_interface/controllers/qt_gesture_controller/srv/gesture_list.srv")
