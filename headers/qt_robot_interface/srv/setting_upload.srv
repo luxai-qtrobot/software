@@ -1,0 +1,5 @@
+string data
+string filepath
+string permission
+---
+bool status

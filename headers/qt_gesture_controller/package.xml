@@ -1,0 +1,14 @@
+<package format="2">
+  <name>qt_gesture_controller</name>
+  <version>1.3.0</version>
+  <description>qt_gesture_controller headers</description>
+
+  <maintainer email="ali.paikan@luxai.com">Ali Paikan</maintainer>
+
+  <license>LUXAI S.A</license>
+
+  <author>Ali Paikan</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+ </package>

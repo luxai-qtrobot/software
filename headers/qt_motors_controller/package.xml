@@ -1,0 +1,16 @@
+<package format="2">
+  <name>qt_motors_controller</name>
+  <version>1.1.2</version>
+  <description>qt_motors_controller headers</description>
+
+  <maintainer email="ali.paikan@luxai.com">Ali Paikan</maintainer>
+
+  <license>LUXAI S.A</license>
+
+  <url type="website">http://wiki.ros.org/Robots/qtrobot</url>
+
+  <author>Ali Paikan</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

@@ -1,0 +1,4 @@
+string filepath
+---
+string data
+bool status
