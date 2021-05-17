@@ -1,8 +1,0 @@
-prefix=/home/qtrobot/catkin_ws/devel
-
-Name: qt_robot_interface
-Description: Description of qt_robot_interface
-Version: 1.2.0
-Cflags: -I/home/qtrobot/catkin_ws/devel/include -I/home/qtrobot/catkin_ws/src/qt_robot_interface/include
-Libs: -L/home/qtrobot/catkin_ws/devel/lib -lqt_robot_interface -lstd_msgs -lmessage_runtime
-Requires: qt_gesture_controller qt_face
