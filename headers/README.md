@@ -21,7 +21,7 @@ $ ln -s ~/software/headers ./
 Build the messages in your Catkin worksapce 
 ```
 $ cd ~/catkin_ws
-$ catkin_make
+$ catkin_make --pkg qt_robot_interface qt_motors_controller qt_gesture_controller qt_vosk_app qt_nuitrack_app
 ```
 
 
