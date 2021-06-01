@@ -65,6 +65,9 @@ class QTrobotVoskSpeech(object):
         ros speech recognize callback
     """
     def callback_recognize(self, req):
+	# clear queue
+	q.queue.clear()
+
         print("options:", len(req.options), req.options)
         print("language:", req.language)
         print("timeout:", str(req.timeout))
