@@ -2,7 +2,7 @@
 # qtrobot.js 
 The **qtrobot.js** library is JavaScript SDK for QTrobot. It is a wrapper over [roslibjs](http://wiki.ros.org/roslibjs) which facilitate stablishing connection with QTrobot rosbridge and expose simple APIs to interact with the robot's ROS interfaces such as playing gestures, configuring the text-to-speech interface, showing emotion, etc. It also offers some generic functions to call any ROS service ([call_service][3]), publish ([publish][5]) and subscribe ([subscribe][7]) to a generic topic.
 
-Please read [QTrobot Interface documentaion](https://docs.luxai.com/api/) for the details description of available ROS interfacesfor QTrobot.
+Please read [QTrobot Interface documentaion](https://docs.luxai.com/api/) for the details description of available ROS interfaces for QTrobot.
 
 ## Quick start
 First source the required JavaScript files in your HTML. Then from your JavaScript code, create an instance of `QTrobot` object with the proper URL of your running rosbridge websocket server. 
@@ -83,12 +83,12 @@ this function will automatically call the connect method with the given 'url' to
 
 ### Parameters
 
-*   `obj` **[object][27]** an object with the following fields
-    url: the rosbridge websocket url (e.g. 'ws://127.0.0.1:9090')
-    reconnect_time: an optionnal delay (in ms) before traying to reconnect
-    callback.connection: an optional callback to be called upon connection
-    callback.close: an optional callback to be called on closing/disconnection
-    callback.error: an optional callback to be called upon any error on connection
+*   `params` **[object][27]** an object with the following fields
+    - url: the rosbridge websocket url (e.g. `ws://127.0.0.1:9090`)
+    - reconnect_time: an optionnal delay (in ms) before traying to reconnect
+    - callback.connection: an optional callback to be called upon connection
+    - callback.close: an optional callback to be called on closing/disconnection
+    - callback.error: an optional callback to be called upon any error on connection
 
 ## call_service
 
