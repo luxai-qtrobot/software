@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- for ROS websockets -->
+    <script src="../../roslib.min.js"></script>
+    <script src="../../eventemitter2.min.js"></script>
+    <script src="../../qtrobot-1.0.min.js"></script>
+</head>
+
+<body>
+<script>    
+var url = prompt("Please enter QTrobot rosbridge url:", "ws://192.168.100.2:9091");
+url = (url == null) ? 'ws://192.168.100.2:9091' : url;
+var qtrobot = null;
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("connecting to QTrobot (please wait...)");
+    qtrobot = new QTrobot({
+        url : url,
+        connection: function(){            
+            console.log("connected to " + url);
+            qtrobot.talk_text('Hello!', function(){
+                qtrobot.show_emotion('QT/happy');
+            });        
+        },
+        error: function(error){
+            console.log(error);
+        },
+        close: function(){
+            console.log("disconnected.");
+        }
+    }); //end of qtrobot
+
+}); // end of DOMContentLoaded
+</script>
+
+<p style="text-align: center;"> Open your browser console to see the output!</p>
+</body>
+</html>

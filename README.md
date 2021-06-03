@@ -6,6 +6,7 @@ The repository is structured as follows:
  - **apps**: contains some open-source QTrobot ROS packages such as Nuitracl interface and voice recgnition
  - **plugins**: contains some robot-dependant plugins such as IKFast Kinematics Solver for arms
  - **models**: contains simple robot urdf and other models 
+ - **sdk**: contains QTrobot extended sdk 
 
 For the complete set of QTrobot demos code and examples, please visit [QTrobot Tutorials](https://github.com/luxai-qtrobot/tutorials). 
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="css/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- for Vue and Vuetify -->
+    <script src="js/vue2.6.12.min.js"></script>
+    <script src="js/vuetify.min.js"></script>
+
+    <!-- for ROS websockets -->
+    <script src="../../roslib.min.js"></script>
+    <script src="../../eventemitter2.min.js"></script>
+    <script src="../../qtrobot-1.0.min.js"></script>
+
+    <!-- my main script -->
+    <script src="js/main.js"></script>
+
+
+</head>
+
+<body>
+
+<script>    
+
+</script>
+
+
+<div id="app">
+    <v-app>
+        <v-container>
+            <v-alert v-if="error_message" border="top" color="red lighten-2" dark>{{error_message}}</v-alert>
+            <v-alert v-if="info_message" border="top" color="blue-grey" dark>{{info_message}}</v-alert>
+            <v-text-field v-model="tts_message" placeholder="text to speak" label="QTrobot Speech:"></v-text-field>
+            <v-btn depressed color="primary" v-on:click="say_text()">Say</v-btn>
+        </v-container>        
+    </v-app>
+</div>
+
+</body>
+</html>
