@@ -84,11 +84,11 @@ this function will automatically call the connect method with the given 'url' to
 ### Parameters
 
 *   `params` **[object][27]** an object with the following fields
-    - url: the rosbridge websocket url (e.g. `ws://127.0.0.1:9090`)
-    - reconnect_time: an optionnal delay (in ms) before traying to reconnect
-    - callback.connection: an optional callback to be called upon connection
-    - callback.close: an optional callback to be called on closing/disconnection
-    - callback.error: an optional callback to be called upon any error on connection
+    - *url*: the rosbridge websocket url (e.g. `ws://127.0.0.1:9090`)
+    - *reconnect_time*: an optionnal delay (in ms) before traying to reconnect
+    - *callback.connection*: an optional callback to be called upon connection
+    - *callback.close*: an optional callback to be called on closing/disconnection
+    - *callback.error*: an optional callback to be called upon any error on connection
 
 ## call_service
 
