@@ -6,7 +6,7 @@ LOG_FILE=$(prepare_logfile "$SCRIPT_NAME")
 
 {
 prepare_ros_environment
-wait_for_ros_node "/rosout" 60
+wait_for_ros_node "/rosout" 180
 
 read -d '' SPEECHENV << EOF
 export PYTHONPATH="${PYTHONPATH}:/home/qtrobot/catkin_ws/devel/lib/python3/dist-packages";
@@ -15,4 +15,4 @@ EOF
 
 exec echo "$QT_PASS" | sudo -kSi bash -c "$SPEECHENV"
 
-} &>> ${LOG_FILE}
+} #&>> ${LOG_FILE}

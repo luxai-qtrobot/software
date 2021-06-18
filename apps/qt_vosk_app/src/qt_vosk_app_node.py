@@ -103,7 +103,7 @@ class QTrobotVoskSpeech(object):
                 data = q.get()
                 if rec.AcceptWaveform(data):
                     result = rec.Result()
-                    print(result)
+                    # print(result)
                     jres = json.loads(result)
                     transcript = jres['text']
                     for option in req.options:
@@ -112,7 +112,7 @@ class QTrobotVoskSpeech(object):
                     should_stop = True
                 else:
                     result = rec.PartialResult()
-                    print(result)
+                    # print(result)
                     jres = json.loads(result)
                     for option in req.options:
                         if option.strip() and option in jres['partial']:
