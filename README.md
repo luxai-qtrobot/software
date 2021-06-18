@@ -7,6 +7,7 @@ The repository is structured as follows:
  - **plugins**: contains some robot-dependant plugins such as IKFast Kinematics Solver for arms
  - **models**: contains simple robot urdf and other models 
  - **sdk**: contains QTrobot extended sdk 
+ - **tools**: a set of helper tools and scripts 
 
 For the complete set of QTrobot demos code and examples, please visit [QTrobot Tutorials](https://github.com/luxai-qtrobot/tutorials). 
 

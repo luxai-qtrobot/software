@@ -8,6 +8,11 @@ import time
 import rospy
 import json
 
+import usb.core
+import usb.util
+
+
+from tuning import Tuning
 
 from qt_vosk_app.srv import *
 
@@ -65,9 +70,8 @@ class QTrobotVoskSpeech(object):
         ros speech recognize callback
     """
     def callback_recognize(self, req):
-	# clear queue
-	q.queue.clear()
-
+        # clear queue
+        q.queue.clear()
         print("options:", len(req.options), req.options)
         print("language:", req.language)
         print("timeout:", str(req.timeout))
@@ -99,21 +103,32 @@ class QTrobotVoskSpeech(object):
                 data = q.get()
                 if rec.AcceptWaveform(data):
                     result = rec.Result()
-                    # print(result)
+                    print(result)
                     jres = json.loads(result)
                     transcript = jres['text']
+                    for option in req.options:
+                        if option.strip() and option in transcript:
+                            transcript = option
                     should_stop = True
                 else:
                     result = rec.PartialResult()
-                    # print(result)
+                    print(result)
                     jres = json.loads(result)
                     for option in req.options:
                         if option.strip() and option in jres['partial']:
                             transcript = option
-                            should_stop = True
+                    should_stop = True if transcript else False
                 should_stop = should_stop or ((time.time() - t_start) > timeout)
 
         return speech_recognizeResponse(transcript)
+
+
+
+def find(vid=0x2886, pid=0x0018):
+    dev = usb.core.find(idVendor=vid, idProduct=pid)
+    if not dev:
+        return
+    return Tuning(dev)
 
 
 if __name__ == "__main__":
@@ -122,7 +137,24 @@ if __name__ == "__main__":
     language = DEFAULT_LANG
     if rospy.has_param('~langauge'):
         language = rospy.get_param('~langauge')
+        
+    # adjusting the Respeaker params for better ASR 
+    rospy.loginfo("adjusting the Respeaker params for better ASR (noise suppression)")
+    dev = find()
+    if not dev:
+        rospy.logfatal("could not open Respeack microphone for tunning")
+        sys.exit(1)
+        
+    dev.write("AGCONOFF", 0)
+    dev.write("AGCGAIN", 15.0)
+    dev.write("STATNOISEONOFF_SR", 1)
+    dev.write("MIN_NS_SR", 0.01)
+    dev.write("GAMMA_NS_SR", 1.80)
+    dev.write("CNIONOFF", 0)
+    
     gspeech = QTrobotVoskSpeech('/qt_robot/speech', language)
     rospy.loginfo("qt_vosk_app is ready!")
     rospy.spin()
     rospy.loginfo("qt_vosk_app shutdown")
+    
+    dev.close()
