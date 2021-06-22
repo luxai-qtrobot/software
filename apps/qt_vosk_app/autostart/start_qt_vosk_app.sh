@@ -15,4 +15,4 @@ EOF
 
 exec echo "$QT_PASS" | sudo -kSi bash -c "$SPEECHENV"
 
-} #&>> ${LOG_FILE}
+} &>> ${LOG_FILE}
