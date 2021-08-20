@@ -4,7 +4,7 @@
 This is QTrobot ReSpeaker app using [ReSpeaker Mic Array v2.0](https://wiki.seeedstudio.com/ReSpeaker_Mic_Array_v2.0)
 
 
-:warning **Do not install any ROS package on QTRP via `apt` commmand!!!**
+:warning: **Do not install any ROS package on QTRP via `apt` commmand** :exclamation: :exclamation: :exclamation:
 
 
 ## Requirements 
@@ -57,7 +57,7 @@ catkin_make -j2
 
 ## Launching QTrobot Respeaker App
 
-**NOTICE**: `qt_respeaker_app` exclusively needs to access the Respeaker mic device. This means that you need to stop any other apps 
+**:exclamation: NOTICE**: `qt_respeaker_app` exclusively needs to access the Respeaker mic device. This means that you need to stop any other apps 
 which are accessing the microphone before launching the `qt_respeaker_app`.  For example, if `qt_vosk_app` is running, you need to disable it 
 in the autodtart of QTRP (i.e. commenting the coresponding line) and reboot the robot!
 
