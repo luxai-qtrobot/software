@@ -1,0 +1,5 @@
+PyAudio
+click
+numpy
+pixel-ring
+pyusb
