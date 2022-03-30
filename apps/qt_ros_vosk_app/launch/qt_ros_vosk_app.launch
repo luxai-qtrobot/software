@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<launch>
+  <rosparam file="$(find qt_ros_vosk_app)/config/qt_ros_vosk_app.yaml" command="load"/>
+  <node pkg="qt_ros_vosk_app" name="qt_ros_vosk_app" type="qt_ros_vosk_app_node.py"
+        output="screen" clear_params="true" required="true" respawn="false">
+  </node>
+</launch>

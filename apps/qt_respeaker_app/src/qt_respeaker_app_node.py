@@ -121,7 +121,7 @@ class RespeakerAudio(object):
             format=pyaudio.paInt16,
             channels=self.available_channels,
             rate=self.rate,
-            frames_per_buffer=1024,
+            frames_per_buffer=512,
             stream_callback=self.stream_callback,
             input_device_index=self.device_index,
         )
