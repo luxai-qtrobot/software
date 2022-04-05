@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 import os
 import queue
-import vosk
 import time
 import rospy
 import json
-from threading import Thread, Condition
+import vosk
 import pvporcupine
-
+from threading import Thread, Condition
 
 from std_msgs.msg import String
 from audio_common_msgs.msg import AudioData
@@ -28,6 +27,7 @@ class QTrobotVoskSpeech(Thread):
         self.language = rospy.get_param("/qt_ros_vosk_app/vosk/default_language", 'en_US')
         self.model_path = rospy.get_param("/qt_ros_vosk_app/vosk/vosk_model_path")
         
+        self.enable_hotword = rospy.get_param("/qt_ros_vosk_app/hotword/enable_hotword", False)
         self.hotword_model = rospy.get_param("/qt_ros_vosk_app/hotword/hotword_model")
         self.hotword = rospy.get_param("/qt_ros_vosk_app/hotword/hotword")
         self.access_key = rospy.get_param("/qt_ros_vosk_app/hotword/access_key")
@@ -42,21 +42,20 @@ class QTrobotVoskSpeech(Thread):
         # Sensitivities for detecting keywords. Each value should be a number within [0, 1]. A higher 
         # sensitivity results in fewer misses at the cost of increasing the false alarm rate. If not set 0.5
         # will be used.
-        self.ppn = pvporcupine.create(keyword_paths=[self.hotword_model], access_key=self.access_key, sensitivities=[self.sensitivity])        
-        
-
-        rospy.Subscriber('/qt_respeaker_app/channel0', AudioData, self.callback_audio_stream)
+        if self.enable_hotword:
+            self.ppn = pvporcupine.create(keyword_paths=[self.hotword_model], access_key=self.access_key, sensitivities=[self.sensitivity]) 
+            self.recognize_pub = rospy.Publisher('/qt_robot/speech/recognize', String, queue_size=10)
+            if self.publish_hotword:
+                self.hotword_pub = rospy.Publisher('/qt_robot/speech/hotword', String, queue_size=1)
+                
 
         # start recognize service
-        self.speech_recognize = rospy.Service('/qt_robot/speech/recognize', speech_recognize, self.callback_recognize)
-
-        self.recognize_pub = rospy.Publisher('/qt_robot/speech/recognize', String, queue_size=10)
-
-        if self.publish_hotword:
-            self.hotword_pub = rospy.Publisher('/qt_robot/speech/hotword', String, queue_size=1)
+        self.speech_recognize = rospy.Service('/qt_robot/speech/recognize', speech_recognize, self.callback_recognize)        
+        rospy.Subscriber('/qt_respeaker_app/channel0', AudioData, self.callback_audio_stream)
 
         # start the background thread 
-        self.start()
+        if self.enable_hotword:
+            self.start()
 
      
     def stop(self):        
@@ -90,7 +89,7 @@ class QTrobotVoskSpeech(Thread):
         indata = bytes(msg.data)        
         self.aqueue.put(indata)                        
         # check for hotword if kaldi is not busy recognizing 
-        if not self.is_kaldi_recognizing:
+        if self.enable_hotword and not self.is_kaldi_recognizing:
             audio_frame = struct.unpack_from("h" * self.ppn.frame_length, indata)                    
             result = self.ppn.process(audio_frame)
             if result >= 0:                
@@ -105,12 +104,13 @@ class QTrobotVoskSpeech(Thread):
     def callback_recognize(self, req):
         # print("options:", len(req.options), req.options)
         # print("language:", req.language)
-        # print("timeout:", str(req.timeout))
-        timeout = (req.timeout if (req.timeout != 0) else 20)
+        # print("timeout:", str(req.timeout))        
+        timeout = (req.timeout if (req.timeout != 0) else 15)
         language = (req.language if (req.language != '') else self.language)
-        
+        options = list(filter(None, req.options)) # remove the empty options 
+
         # check if we need to change the language model
-        print('current language: ' + self.language)
+        # print('current language: ' + self.language)
         if language != self.language:
             print('switching language to ' + language)
             # VOSK python API does not implement exception!
@@ -124,11 +124,24 @@ class QTrobotVoskSpeech(Thread):
                 return speech_recognizeResponse('')
         
         # with sd.RawInputStream(samplerate=self.device_samplerate, blocksize = 8000, device=self.device_index, dtype='int16', channels=1, callback=callback):
-        transcript = self.recognize_kaldi(timeout, req.options, True)
+        transcript = self.recognize_kaldi(timeout, options, True)
         return speech_recognizeResponse(transcript)
 
 
-    def recognize_kaldi(self, timeout, options, clear_queue=False):
+
+    def contains_options(self, options, transcript):
+        if not transcript:
+            return None        
+        for opt in options:
+            opt = opt.strip()
+            # do not split the transcript of an option contains more than a word such as 'blue color'
+            phrase = transcript if (len(opt.split()) > 1) else transcript.split()
+            if opt and opt in phrase:
+                return opt
+        return None
+
+
+    def recognize_kaldi(self, timeout, options, clear_queue=False):        
         self.is_kaldi_recognizing = True
         # clear queue
         if clear_queue:
@@ -136,28 +149,35 @@ class QTrobotVoskSpeech(Thread):
 
         rec = vosk.KaldiRecognizer(self.model, self.audio_rate)        
         t_start = time.time()
-        should_stop = False
+        # should_stop = False
         transcript = ''
-        while not should_stop:
+        while True:
             data = self.aqueue.get()
             if rec.AcceptWaveform(data):
-                result = rec.Result()
-                # print(result)
+                result = rec.Result()                
                 jres = json.loads(result)
-                transcript = jres['text']
-                for option in options:
-                    if option.strip() and option in transcript:
-                        transcript = option
-                should_stop = True
+                transcript = jres['text'].strip()
+                if not options:
+                    if transcript: 
+                        break
+                else:
+                    word = self.contains_options(options, transcript)
+                    if word:
+                        transcript = word
+                        break
+                            
             else:
-                result = rec.PartialResult()
-                # print(result)
+                result = rec.PartialResult()                
                 jres = json.loads(result)
-                for option in options:
-                    if option.strip() and option in jres['partial']:
-                        transcript = option
-                should_stop = True if transcript else False
-            should_stop = should_stop or ((time.time() - t_start) > timeout)            
+                word = self.contains_options(options, jres['partial'])
+                if word:
+                    transcript = word
+                    break
+            # check the timeout
+            if (time.time() - t_start) > timeout:
+                transcript = ''
+                break
+
         self.is_kaldi_recognizing = False
         return transcript
 

@@ -7,9 +7,10 @@ qt_ros_vosk_app:
     default_language: 'en_US'
   
   hotword:
-    hotword_model: '/home/qtrobot/catkin_ws/src/qt_ros_vosk_app/data/qt_robot.ppn'
+    enable_hotword: false
+    hotword_model: ''
     hotword: 'QTrobot'
-    access_key: 'K8eJOJwOEKK0AxUzCVy8Rd2lV6uVgxcvsFkEMt561J+kwP8Ng1V9eg=='
+    access_key: ''
     sensitivity: 0.7
     publish_hotword: true
     feedback_audio: '/home/qtrobot/catkin_ws/src/qt_ros_vosk_app/data/bell.wav'

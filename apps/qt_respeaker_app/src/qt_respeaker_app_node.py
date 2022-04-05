@@ -126,13 +126,13 @@ class RespeakerAudio(object):
             input_device_index=self.device_index,
         )
 
-    def get_respeaker_device(self):
+    def get_respeaker_device(self):        
         info = self.pyaudio.get_host_api_info_by_index(0)
         numdevices = info.get('deviceCount')
         for i in range(0, numdevices):
             if (self.pyaudio.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
                 device = self.pyaudio.get_device_info_by_host_api_device_index(0, i)
-                if "ReSpeaker" in device.get('name'):
+                if "ReSpeaker" in device.get('name'):                    
                     return device.get('index')
 
     def __del__(self):
@@ -211,11 +211,13 @@ class RespeakerNode(object):
         self.pub_audios[channel].publish(AudioData(data=data))
 
     def on_timer(self, event):
-        is_voice = self.respeaker.tuning().is_voice()
-        if is_voice:
-            self.pub_doa.publish(self.respeaker.tuning().direction)
-            self.pub_vad.publish(Bool(data=is_voice))
-
+        try:
+            is_voice = self.respeaker.tuning().is_voice()
+            if is_voice:
+                self.pub_doa.publish(self.respeaker.tuning().direction)
+                self.pub_vad.publish(Bool(data=is_voice))
+        except: 
+            rospy.logwarn("error reading respeaker!")
 
 if __name__ == '__main__':
     rospy.init_node("qt_respeaker_app_node")
