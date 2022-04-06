@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>qt_vosk_app</name>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <description>The qt_vosk_app package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
@@ -54,9 +54,7 @@
   <build_export_depend>std_msgs</build_export_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>pyaudio</exec_depend>
-
-
+  
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

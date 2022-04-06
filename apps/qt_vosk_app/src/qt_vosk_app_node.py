@@ -1,160 +1,207 @@
 #!/usr/bin/env python3
 import os
 import queue
-import sounddevice as sd
-import vosk
-import sys
 import time
 import rospy
 import json
+import vosk
+import pvporcupine
+from threading import Thread, Condition
 
-import usb.core
-import usb.util
-
-
-from tuning import Tuning
-
+from std_msgs.msg import String
+from audio_common_msgs.msg import AudioData
 from qt_vosk_app.srv import *
 
 
-MODELS_PATH = '/home/qtrobot/robot/vosk/models/'
-DEFAULT_LANG = 'en_US'
 
-
-q = queue.Queue()
-
-def callback(indata, frames, time, status):
-    """This is called (from a separate thread) for each audio block."""
-    if status:
-        print(status, file=sys.stderr)
-    q.put(bytes(indata))
-
-
-class QTrobotVoskSpeech(object):
+class QTrobotVoskSpeech(Thread):
     """QTrobot speech recognition using google cloud service"""
 
-    def __init__(self, prefix, language):
-        self.prefix = prefix
-        self.language = language
-        # find respeaker mic
-        self.device_index  = self.get_respeaker_device_index()
-        if not self.device_index  :
-            rospy.logfatal("could not find Respeack microphone device")
-            raise Exception('device')
+    def __init__(self):
+        super(QTrobotVoskSpeech, self).__init__()
 
-        # open mic audio device
-        device_info = sd.query_devices(self.device_index, 'input')
-        # soundfile expects an int, sounddevice provides a float:
-        self.device_samplerate = int(device_info['default_samplerate'])
+        self.is_kaldi_recognizing = False
+        self.aqueue = queue.Queue(maxsize=2000) # more than one minute 
+        self.condition = Condition()
+        self.audio_rate = rospy.get_param("/qt_vosk_app/audio_rate", 16000)
+        self.language = rospy.get_param("/qt_vosk_app/vosk/default_language", 'en_US')
+        self.model_path = rospy.get_param("/qt_vosk_app/vosk/vosk_model_path")
+        
+        self.enable_hotword = rospy.get_param("/qt_vosk_app/hotword/enable_hotword", False)
+        self.hotword_model = rospy.get_param("/qt_vosk_app/hotword/hotword_model")
+        self.hotword = rospy.get_param("/qt_vosk_app/hotword/hotword")
+        self.access_key = rospy.get_param("/qt_vosk_app/hotword/access_key")
+        self.sensitivity = rospy.get_param("/qt_vosk_app/hotword/sensitivity", 0.7)
+        self.publish_hotword = rospy.get_param("/qt_vosk_app/hotword/publish_hotword", False)
+        self.feedback_audio = rospy.get_param("/qt_vosk_app/hotword/feedback_audio", None)
 
-        self.model = vosk.Model(MODELS_PATH + self.language)
+        # initialize vosk 
+        self.model = vosk.Model(self.model_path + self.language)
+
+        # initialize porcupine
+        # Sensitivities for detecting keywords. Each value should be a number within [0, 1]. A higher 
+        # sensitivity results in fewer misses at the cost of increasing the false alarm rate. If not set 0.5
+        # will be used.
+        if self.enable_hotword:
+            self.ppn = pvporcupine.create(keyword_paths=[self.hotword_model], access_key=self.access_key, sensitivities=[self.sensitivity]) 
+            self.recognize_pub = rospy.Publisher('/qt_robot/speech/recognize', String, queue_size=10)
+            if self.publish_hotword:
+                self.hotword_pub = rospy.Publisher('/qt_robot/speech/hotword', String, queue_size=1)
+                
 
         # start recognize service
-        self.speech_recognize = rospy.Service(prefix+'/recognize', speech_recognize, self.callback_recognize)
+        self.speech_recognize = rospy.Service('/qt_robot/speech/recognize', speech_recognize, self.callback_recognize)        
+        rospy.Subscriber('/qt_respeaker_app/channel0', AudioData, self.callback_audio_stream)
+
+        # start the background thread 
+        if self.enable_hotword:
+            self.start()
+
+     
+    def stop(self):        
+        with self.condition:
+            self.condition.notifyAll()
 
 
-    """
-        Get ReSpeaker microphone device
-    """
-    def get_respeaker_device_index(self):
-        devices = sd.query_devices()
-        index = 0
-        for dev in devices:
-            if "ReSpeaker" in dev['name']:
-                return index
-            index = index + 1
-        return None
+    def run(self):
+        """
+        background thread which wait for wakeword and recognize 
+        whatever being said after wakeword
+        """
+        while not rospy.is_shutdown():
+            with self.condition:
+                self.condition.wait()
+            if rospy.is_shutdown():
+                break
+            print('Detected...')
+            if self.publish_hotword:
+                self.hotword_pub.publish(self.hotword)
+            if self.feedback_audio:
+                os.system(f"play {self.feedback_audio} >/dev/null 2>&1")
+            transcript = self.recognize_kaldi(10, [], clear_queue=True)
+            print(transcript)
+            if transcript:
+                self.recognize_pub.publish(transcript)
 
+
+
+    def callback_audio_stream(self, msg):                
+        indata = bytes(msg.data)           
+        try:
+            self.aqueue.put_nowait(indata)            
+        except:
+            pass
+
+        # check for hotword if kaldi is not busy recognizing 
+        if self.enable_hotword and not self.is_kaldi_recognizing:
+            audio_frame = struct.unpack_from("h" * self.ppn.frame_length, indata)                    
+            result = self.ppn.process(audio_frame)
+            if result >= 0:                
+                # notify the background thread to start recognizig 
+                with self.condition:
+                    self.condition.notifyAll()
+        
 
     """
         ros speech recognize callback
     """
     def callback_recognize(self, req):
-        # clear queue
-        q.queue.clear()
         print("options:", len(req.options), req.options)
         print("language:", req.language)
-        print("timeout:", str(req.timeout))
-        timeout = (req.timeout if (req.timeout != 0) else 20)
+        print("timeout:", str(req.timeout))        
+        timeout = (req.timeout if (req.timeout != 0) else 15)
         language = (req.language if (req.language != '') else self.language)
-        
+        options = list(filter(None, req.options)) # remove the empty options 
+
         # check if we need to change the language model
-        print('current language: ' + self.language)
+        # print('current language: ' + self.language)
         if language != self.language:
             print('switching language to ' + language)
             # VOSK python API does not implement exception!
             # so we need to check the path by ourselves 
             
-            if os.path.exists(MODELS_PATH + language):
-                self.model = vosk.Model(MODELS_PATH + language)
+            if os.path.exists(self.model_path + language):
+                self.model = vosk.Model(self.model_path + language)
                 self.language = language
             else:
                 rospy.loginfo('could not load language model for ' + language)
                 return speech_recognizeResponse('')
         
-        with sd.RawInputStream(samplerate=self.device_samplerate, blocksize = 8000, device=self.device_index, dtype='int16', channels=1, callback=callback):
-            
-            rec = vosk.KaldiRecognizer(self.model, self.device_samplerate)
-            
-            t_start = time.time()
-            should_stop = False
-            transcript = ''
-            while not should_stop:
-                data = q.get()
-                if rec.AcceptWaveform(data):
-                    result = rec.Result()
-                    # print(result)
-                    jres = json.loads(result)
-                    transcript = jres['text']
-                    for option in req.options:
-                        if option.strip() and option in transcript:
-                            transcript = option
-                    should_stop = True
-                else:
-                    result = rec.PartialResult()
-                    # print(result)
-                    jres = json.loads(result)
-                    for option in req.options:
-                        if option.strip() and option in jres['partial']:
-                            transcript = option
-                    should_stop = True if transcript else False
-                should_stop = should_stop or ((time.time() - t_start) > timeout)
-
+        # with sd.RawInputStream(samplerate=self.device_samplerate, blocksize = 8000, device=self.device_index, dtype='int16', channels=1, callback=callback):
+        transcript = self.recognize_kaldi(timeout, options, True)
         return speech_recognizeResponse(transcript)
 
 
 
-def find(vid=0x2886, pid=0x0018):
-    dev = usb.core.find(idVendor=vid, idProduct=pid)
-    if not dev:
-        return
-    return Tuning(dev)
+    def contains_options(self, options, transcript):
+        if not transcript:
+            return None        
+        for opt in options:
+            opt = opt.strip()
+            # do not split the transcript of an option contains more than a word such as 'blue color'
+            phrase = transcript if (len(opt.split()) > 1) else transcript.split()
+            if opt and opt in phrase:
+                return opt
+        return None
+
+
+    def recognize_kaldi(self, timeout, options, clear_queue=False):        
+        self.is_kaldi_recognizing = True
+        # clear queue (keep the last second)
+        if clear_queue:                        
+            # self.aqueue.queue.clear()
+            # example : if audio rate is 16000 and respeaker buffersize is 512, then the last one second will be around 31 item in queue
+            while self.aqueue.qsize() > int(self.audio_rate / 512 / 2):
+                self.aqueue.get()
+
+        if options:            
+            rec = vosk.KaldiRecognizer(self.model, self.audio_rate, json.dumps(options))
+        else: 
+            rec = vosk.KaldiRecognizer(self.model, self.audio_rate) 
+
+        t_start = time.time()
+        # should_stop = False
+        transcript = ''
+        while True:
+            data = self.aqueue.get()
+            if rec.AcceptWaveform(data):
+                result = rec.Result()                 
+                jres = json.loads(result)                
+                transcript = jres['text'].strip()
+                # print('result:', transcript)
+                if transcript:
+                    break
+
+                # if not options:
+                #     if transcript: 
+                #         break
+                # else:
+                #     word = self.contains_options(options, transcript)
+                #     if word:
+                #         transcript = word
+                #         break                            
+            # else:
+            #     result = rec.PartialResult()                     
+            #     jres = json.loads(result)
+            #     print('partial result:', jres['partial'])
+            #     word = self.contains_options(options, jres['partial'])
+            #     if word:
+            #         transcript = word
+            #         break
+            # check the timeout
+            if (time.time() - t_start) > timeout:
+                transcript = ''
+                break
+
+        self.is_kaldi_recognizing = False        
+        return transcript
 
 
 if __name__ == "__main__":
     rospy.init_node('qt_vosk_app')
-        
-    language = DEFAULT_LANG
-    if rospy.has_param('~langauge'):
-        language = rospy.get_param('~langauge')
-        
-    # adjusting the Respeaker params for better ASR 
-    rospy.loginfo("adjusting the Respeaker params for better ASR (noise suppression)")
-    dev = find()
-    if not dev:
-        rospy.logfatal("could not open Respeack microphone for tunning")
-        sys.exit(1)
-        
-    dev.write("AGCONOFF", 0)
-    dev.write("AGCGAIN", 15.0)
-    dev.write("STATNOISEONOFF_SR", 1)
-    dev.write("MIN_NS_SR", 0.01)
-    dev.write("GAMMA_NS_SR", 1.80)
-    dev.write("CNIONOFF", 0)
-    
-    gspeech = QTrobotVoskSpeech('/qt_robot/speech', language)
+                    
+    speech = QTrobotVoskSpeech()
     rospy.loginfo("qt_vosk_app is ready!")
     rospy.spin()
     rospy.loginfo("qt_vosk_app shutdown")
-    
-    dev.close()
+    speech.stop()    

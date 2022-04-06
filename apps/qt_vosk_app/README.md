@@ -1,45 +1,28 @@
-# QTrobot Vosk speech recognition
+# QTrobot Vosk speech recognition using ROS audio
 
 ## Requirements 
-Please notice that QTrobot vosk speech recognition  
-- works only on the Ubuntu > 20 and Rasbian OS buster.
-- Requires permission to tune Respeaker mic array for better background noise suppression (see the installation steps)
+- *Python 3*
+- *qt_respeaker_app* for audio input from `/qt_respeaker_app/channel0`
+- *vosk* and *vosk language models* for speech recogntion 
+- *pvporcupine* for optional hotword/wakeword detection 
+
+Please notice that wakeword detection is diabled by default in the `qt_ros_vosk_app.yaml` config file. To enable it, first you need to create a wakeord using porcppuine online console (https://picovoice.ai/platform/porcupine/) and set the corresponding API key. Afterward, everything will work offline. 
 
 
 ## Installation 
-Follow the instruction to install the dependencies 
-
-### Install the required packages portaudio 
+Install the required python packages:
 
 ```
-sudo apt install libportaudio2
-sudo pip3 install pyusb sounddevice vosk
+sudo pip3 install vosk pvporcupine
 ```
 
-### Setup usb permission (for pyusb)
-Create a file called `90-mic.rules` in `/etc/udev/rules.d/`:
-```
-sudo nano /etc/udev/rules.d/90-mic.rules
-```
-
-and add the following content
-```
-ACTION=="add", SUBSYSTEMS=="usb", ATTRS{idVendor}=="2886", ATTRS{idProduct}=="0018", MODE="660", GROUP="plugdev"
-```
-
-Reload udev and reboot:
-```
-sudo udevadm control --reload
-sudo udevadm trigger
-sudo reboot
-```
 
 ### Build the messages 
-make a link (or copy) to `qt_vosk_app` in catkin workspace source directory and build it. for example, 
+make a link (or copy) to `qt_ros_vosk_app` in catkin workspace source directory and build it. for example, 
 
 ```
 $ cd ~/catkin_ws/src
-$ ln -s ~/robot/code/software/apps/qt_vosk_app ./
+$ ln -s ~/robot/code/software/apps/qt_ros_vosk_app ./
 $ cd ~/catkin_ws/
 $ catkin_make
 ```
@@ -53,8 +36,7 @@ Then rename the model folder in ISO language format name (e.g. en_GB, fr_FR)
 
 ## Lunching QTrobot Vosk App service and trying it
 ```
-$ cd ~/catkin_ws/src/qt_vosk_app
-$ python3 src/qt_vosk_app.py 
+$ roslaunch qt_ros_vosk_app qt_ros_vosk_app.launch
 ```
 
 open another terminal and try:
@@ -64,10 +46,10 @@ options:[]
 timeout: 0"
 ```
 
-or give your expected words as options. qt_vosk_app will look into the recognized script to find one of the option and return it. For example, for the following call, if you say *"Oh yes!"*, the resturn value of the service is *"yes"*.
+or give your expected words as options. qt_ros_vosk_app will look into the recognized script to find one of the option and return it. For example, for the following call, if you say *"Oh yes!"*, the resturn value of the service is *"yes"*.
 
 ```
 $ rosservice call /qt_robot/speech/recognize "language: 'en_US'
-options:[yes no maybe]
+options:['yes' 'no' 'maybe']
 timeout: 0"
 ```

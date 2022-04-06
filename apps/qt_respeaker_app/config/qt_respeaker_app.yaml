@@ -3,7 +3,7 @@ qt_respeaker_app:
   suppress_pyaudio_error : true 
   tuning:
     AGCONOFF: 0
-    AGCGAIN: 100.0    
+    AGCGAIN: 15.0    
     STATNOISEONOFF_SR: 1
     MIN_NS_SR: 0.01
     GAMMA_NS_SR: 1.80
