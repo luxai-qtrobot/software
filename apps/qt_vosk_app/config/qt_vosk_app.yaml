@@ -1,6 +1,5 @@
 qt_vosk_app:
   audio_rate: 16000
-  audio_topic: '/qt_respeaker_app/channel0'
 
   vosk:
     vosk_model_path: '/home/qtrobot/robot/vosk/models/'  

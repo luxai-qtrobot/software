@@ -155,8 +155,8 @@ class QTrobotVoskSpeech(Thread):
                 self.aqueue.get()
 
         if options:            
-            rec = vosk.KaldiRecognizer(self.model, self.audio_rate, json.dumps(options))
-        else: 
+            rec = vosk.KaldiRecognizer(self.model, self.audio_rate, json.dumps(options, ensure_ascii=False))
+        else:
             rec = vosk.KaldiRecognizer(self.model, self.audio_rate) 
 
         t_start = time.time()
