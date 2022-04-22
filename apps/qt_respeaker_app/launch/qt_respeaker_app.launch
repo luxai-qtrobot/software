@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+  <rosparam file="$(find qt_respeaker_app)/config/qt_respeaker_app.yaml" command="load"/>
+  <!--remap from="/qt_respeaker_app" to="/qt_respeaker_app_ext"/-->
+  <node pkg="qt_respeaker_app" name="qt_respeaker_app" type="qt_respeaker_app_node.py"
+        output="screen" clear_params="true" respawn="true">        
+  </node>
+</launch>

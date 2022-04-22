@@ -139,21 +139,13 @@ class Tuning:
         usb.util.dispose_resources(self.dev)
 
 
-def find(vid=0x2886, pid=0x0018):
-    dev = usb.core.find(idVendor=vid, idProduct=pid)
-    if not dev:
-        return
-
-    # configuration = dev.get_active_configuration()
-
-    # interface_number = None
-    # for interface in configuration:
-    #     interface_number = interface.bInterfaceNumber
-
-    #     if dev.is_kernel_driver_active(interface_number):
-    #         dev.detach_kernel_driver(interface_number)
-
-    return Tuning(dev)
+def find(vid=0x2886, pid=0x0018, dev_id=0):    
+    print(f"looking for device {dev_id}")
+    devices = list(usb.core.find(find_all=True, idVendor=vid, idProduct=pid))
+    try:
+        return Tuning(devices[dev_id])
+    except:
+        return None
 
 
 def set_param(dev, name, value):
@@ -166,12 +158,16 @@ def set_param(dev, name, value):
 
 if __name__ == '__main__':
 
-    dev = find()
+    id = 0
+    if len(sys.argv) > 1:
+        id = int(sys.argv[1])
+
+    dev = find(dev_id=id)
     if not dev:
         print('No device found')
         sys.exit(1)
 
-    
+
     sg.theme('DarkAmber')   # Add a touch of color
     # All the stuff inside your window.
     default_params = {}
