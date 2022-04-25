@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+  <rosparam file="$(find qt_gspeech_app)/config/qt_gspeech_app.yaml" command="load"/>
+  <remap from="qt_respeaker_app/channel0" to="qt_respeaker_app_ext/channel0"/>
+  <node pkg="qt_gspeech_app" name="qt_gspeech_app" type="qt_gspeech_app_node.py"
+        output="screen" clear_params="true" respawn="true">
+  </node>
+</launch>
