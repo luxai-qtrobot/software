@@ -1,3 +1,6 @@
 qt_gspeech_app:
   audio_rate: 16000
-  default_language: 'en_US'
+  default_language: 'en-US'
+  model: 'command_and_search' # e.g. 'default', 'latest_short', 'command_and_search'.  see the available models: https://cloud.google.com/speech-to-text/docs/basics#select-model
+  # use_enhanced_model: false
+  

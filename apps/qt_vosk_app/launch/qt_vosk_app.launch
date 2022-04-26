@@ -2,7 +2,7 @@
 
 <launch>
   <rosparam file="$(find qt_vosk_app)/config/qt_vosk_app.yaml" command="load"/>
-  <remap from="qt_respeaker_app/channel0" to="qt_respeaker_app_ext/channel0"/>
+  <!-- <remap from="qt_respeaker_app/channel0" to="qt_respeaker_app_ext/channel0"/> -->
   <node pkg="qt_vosk_app" name="qt_vosk_app" type="qt_vosk_app_node.py"
         output="screen" clear_params="true" respawn="true">
   </node>

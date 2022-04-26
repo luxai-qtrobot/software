@@ -6,7 +6,7 @@ import rospy
 import random
 
 from qt_robot_interface.srv import *
-from qt_vosk_app.srv import *
+from qt_gspeech_app.srv import *
 
 
 class Synchronizer():
@@ -74,11 +74,12 @@ if __name__ == '__main__':
     try:
         for w in vocabs:
             # w = random.choice(words[0:20])
+            w = w.lower()
             print(f"{error_count+correct_count}: {w}")
 
             results = bs.sync([
-                (0, lambda: recognize("en_US", vocabs, 10)),
-                (1, lambda: talk(w))
+                (0, lambda: recognize("en-US", vocabs, 10)),
+                (2, lambda: talk(w))
             ])
 
             try:
@@ -86,6 +87,7 @@ if __name__ == '__main__':
             except:
                 transcript = results[1].transcript
 
+            transcript = transcript.lower()
             print(f"got: {transcript}")
             if transcript.replace(".", "") == w:
                 correct_count = correct_count + 1

@@ -6,7 +6,7 @@ import rospy
 import random
 
 from qt_robot_interface.srv import *
-from qt_vosk_app.srv import *
+from qt_gspeech_app.srv import *
 
 german_words = [
 ["GERFND1_0001", "hallo"],
@@ -227,16 +227,18 @@ if __name__ == '__main__':
     correct_count = 0
     error_count = 0
     # preload german model
-    recognize("de_DE", [], 2)
+    recognize("de-DE", [], 2)
+
     try:
         for w_pair in german_words:            
             audio = w_pair[0]
             w = w_pair[1]
+            w = w.lower()
             print(f"{error_count+correct_count}: {w}")
 
             results = bs.sync([
-                (0, lambda: recognize("de_DE", options, 10)),
-                (1, lambda: talk("german/" + audio, ""))
+                (0, lambda: recognize("de-De", options, 10)),
+                (2, lambda: talk("german/" + audio, ""))
             ])
 
             try:
@@ -244,6 +246,7 @@ if __name__ == '__main__':
             except:
                 transcript = results[1].transcript
 
+            transcript = transcript.lower()
             print(f"got: {transcript}")
             if transcript.replace(".", "") == w:
                 correct_count = correct_count + 1
