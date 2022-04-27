@@ -226,8 +226,6 @@ if __name__ == '__main__':
     bs = Synchronizer()
     correct_count = 0
     error_count = 0
-    # preload german model
-    recognize("de-DE", [], 2)
 
     try:
         for w_pair in german_words:            
