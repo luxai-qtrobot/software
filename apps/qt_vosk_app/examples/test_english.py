@@ -71,6 +71,7 @@ if __name__ == '__main__':
     correct_count = 0
     error_count = 0
     vocabs = words
+    errors = []
     try:
         for w in vocabs:
             # w = random.choice(words[0:20])
@@ -91,6 +92,7 @@ if __name__ == '__main__':
                 correct_count = correct_count + 1
             else:
                 error_count = error_count + 1               
+                errors.append(w)
     except:
         pass
 
@@ -100,3 +102,4 @@ if __name__ == '__main__':
     print(f"Correct: {correct_count}")
     print(f"Wrong:   {error_count}")
     print("WER:      %.2f " % (error_count/(error_count + correct_count)*100))
+    print("Errors", errors)

@@ -228,6 +228,7 @@ if __name__ == '__main__':
     error_count = 0
     # preload german model
     recognize("de_DE", [], 2)
+    errors = []
     try:
         for w_pair in german_words:            
             audio = w_pair[0]
@@ -248,7 +249,8 @@ if __name__ == '__main__':
             if transcript.replace(".", "") == w:
                 correct_count = correct_count + 1
             else:
-                error_count = error_count + 1               
+                error_count = error_count + 1
+                errors.append(w)             
     except:
         pass
 
@@ -258,3 +260,4 @@ if __name__ == '__main__':
     print(f"Correct: {correct_count}")
     print(f"Wrong:   {error_count}")
     print("WER:      %.2f " % (error_count/(error_count + correct_count)*100))
+    print("Errors", errors)
