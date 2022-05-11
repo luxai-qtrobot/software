@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>qt_vosk_app</name>
+  <name>qt_gspeech_app</name>
   <version>2.0.0</version>
-  <description>The qt_vosk_app package</description>
+  <description>The qt_gspeech_app package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

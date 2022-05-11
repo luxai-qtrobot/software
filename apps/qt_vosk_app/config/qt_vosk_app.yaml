@@ -1,0 +1,15 @@
+qt_vosk_app:
+  audio_rate: 16000
+
+  vosk:
+    vosk_model_path: '/home/qtrobot/robot/vosk/models/'  
+    default_language: 'en_US'
+  
+  hotword:
+    enable_hotword: false
+    hotword_model: ''
+    hotword: 'QTrobot'
+    access_key: ''
+    sensitivity: 0.7
+    publish_hotword: true
+    feedback_audio: '/home/qtrobot/catkin_ws/src/qt_ros_vosk_app/data/bell.wav'

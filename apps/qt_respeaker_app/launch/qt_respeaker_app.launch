@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+  <rosparam file="$(find qt_respeaker_app)/config/qt_respeaker_app.yaml" command="load"/>
+  <!-- <remap from="qt_respeaker_app/channel0" to="qt_respeaker_app_ext/channel0"/>
+  <remap from="qt_respeaker_app/channel1" to="qt_respeaker_app_ext/channel1"/>
+  <remap from="qt_respeaker_app/channel2" to="qt_respeaker_app_ext/channel2"/>
+  <remap from="qt_respeaker_app/channel3" to="qt_respeaker_app_ext/channel3"/>
+  <remap from="qt_respeaker_app/channel4" to="qt_respeaker_app_ext/channel4"/>
+  <remap from="qt_respeaker_app/channel5" to="qt_respeaker_app_ext/channel5"/>
+  <remap from="qt_respeaker_app/is_speaking" to="qt_respeaker_app_ext/is_speaking"/>
+  <remap from="qt_respeaker_app/sound_direction" to="qt_respeaker_app_ext/sound_direction"/> -->
+
+  <node pkg="qt_respeaker_app" name="" type="qt_respeaker_app_node.py" output="screen"  respawn="true">
+  </node>
+</launch>

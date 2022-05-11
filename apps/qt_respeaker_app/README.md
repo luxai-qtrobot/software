@@ -1,20 +1,17 @@
-
 # QTrobot ReSpeaker App
 
 To record the microphone data we need to run QTrobot ReSpeaker app, which is using [ReSpeaker Mic Array v2.0](https://wiki.seeedstudio.com/ReSpeaker_Mic_Array_v2.0)
 
-### Installation 
+## Installation 
 
 :warning: **Do not install any ROS package on QTRP via `apt` commmand**
 
-
-You can skip this part if the app is already instaled ``rospack find qt_respeaker_app`` on your system (QTRP).
+You can skip this part if the app is already instaled ``rospack find qt_respeaker_app`` on your system.
 If you get this error ``[rospack] Error: package 'qt_respeaker_app' not found`` follow next steps.
 
-Please notice that this should be installed on QTRP running with python3. 
-This should be in ``/home/qtrobot/robot/code/software/apps`` folder on QTRP.
+Please notice that this should be installed in ``/home/qtrobot/robot/code/software/apps`` folder using python3.
 
-Get the latest version (ssh to QTRP):
+Get the latest version:
 
 ```
 cd ~/robot/code/software
@@ -29,7 +26,36 @@ git clone https://github.com/luxai-qtrobot/software.git
 ```
 
 
-#### 1. Install python3 requirements (QTRP)
+### 1. Install requirements
+
+#### Install the required packages portaudio 
+
+```
+sudo apt install libportaudio2
+sudo pip3 install pyusb sounddevice vosk
+```
+
+#### Setup usb permission (for pyusb)
+
+Create a file called `90-mic.rules` in `/etc/udev/rules.d/`:
+
+```
+sudo nano /etc/udev/rules.d/90-mic.rules
+```
+
+and add the following content
+
+```
+ACTION=="add", SUBSYSTEMS=="usb", ATTRS{idVendor}=="2886", ATTRS{idProduct}=="0018", MODE="660", GROUP="plugdev"
+```
+
+Reload udev and reboot:
+```
+sudo udevadm control --reload
+sudo udevadm trigger
+sudo reboot
+```
+
 
 Go to `qt_respeaker_app` folder and install python requirements:
 
@@ -38,7 +64,7 @@ cd ~/robot/code/software/apps/qt_respeaker_app
 sudo pip3 install -r requirements.txt
 ```
 
-#### 2. Clone audio_common repository (QTRP)
+### 2. Clone audio_common repository 
 
 Clone the audio_common git repository to the home folder.
 
@@ -47,9 +73,10 @@ cd ~
 git clone https://github.com/ros-drivers/audio_common.git
 ```
 
-#### 2. Link to catkin workspace (QTRP)
 
-On QTRP make a symlink in ``~/catkin_ws/src`` to ``qt_respeaker_app``:
+### 3. Link to catkin workspace
+
+Make a symlink in ``~/catkin_ws/src`` to ``qt_respeaker_app``:
 
 ```
 cd ~/catkin_ws/src
@@ -63,27 +90,19 @@ cd ~/catkin_ws/src
 ln -s ~/audio_common/audio_common_msgs .
 ```
 
-#### 3. Build ROS package (QTRP)
+### 4. Build ROS package
 
 ```
 cd ~/catkin_ws/
 catkin_make -j2
 ```
 
-### Launching QTrobot Respeaker App
+### 5. Launching QTrobot Respeaker App
 
-:exclamation:
-`qt_respeaker_app` exclusively needs to access the Respeaker mic device. This means that you need to stop any other apps 
-which are accessing the microphone before launching the `qt_respeaker_app`.  For example, if `qt_vosk_app` is running, you need to disable it 
-in the autodtart of QTRP (i.e. commenting the coresponding line) and reboot the robot!
-
-
-
-Go to qt_respeaker_app folder and execute ``start_qt_respeaker_app.sh``
+To launch qt_respeaker_app you can simply run:
 
 ```
-cd ~/catkin_ws/src/qt_respeaker_app/autostart
-./start_qt_respeaker_app.sh
+roslaunch qt_respeaker_app qt_respeaker_app.launch
 ```
 
 To check that the qt_respeaker_app is running open another terminal and try:
@@ -105,28 +124,7 @@ You should see all qt_respeaker_app topics:
 /qt_respeaker_app/sound_direction
 ```
 
-### Run automaticliy on reboot
-
-Copy autostart script to QTRP autostart folder:
-
-```
-cp ~/robot/code/software/apps/qt_respeaker_app/autostart/start_qt_respeaker_app.sh ~/robot/autostart
-```
-
-Edit ``autostart_screens.sh``:
-
-```
-sudo nano ~/robot/autostart/autostart_screens.sh
-```
-
-Add this line below other scripts 
-
-```
-run_script "start_qt_respeaker_app.sh"
-```
-
-
-### Topics
+## Topics
 
 QTrobot ReSpeaker app extracts data from [ReSpeaker Mic Array v2.0](https://wiki.seeedstudio.com/ReSpeaker_Mic_Array_v2.0) and publishes to following topics:
 
@@ -157,7 +155,7 @@ VAD (Voice Activity Detection)
 DOA (Direction of Arrival)
 
 
-## Record audio data on QTPC
+## Record audio data
 
 ### Create a python project 
 First we create a python project for our tutorial. let's call it `tutorial_qt_respeaker` and add the required python file: 
@@ -212,9 +210,6 @@ This will record processed audio for ASR from channel 0 and save it into `audio.
 By default we setup some tunning parameters for nosie reduction and automatic gain in `config/qt_respeaker_app.yaml` which can be modified.
 If you would like to change the gain of the microphone, you just need to change the  line `AGCGAIN: 100.0` in `config/qt_respeaker_app.yaml`.
 
-
-
 ## Author
 
 Denis Kovacevic <<denis.kovacevic@luxai.com>>
-
