@@ -23,6 +23,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 
 #include "qt_nuitrack_app/suspend.h"
@@ -54,6 +56,7 @@ protected:
     void nuitrackTimerCallback(const ros::TimerEvent& event);
     void onNewGestures(const tdv::nuitrack::GestureData::Ptr gesture_data);
     void onNewColorFrame(tdv::nuitrack::RGBFrame::Ptr frame);
+    void onNewDepthFrame(tdv::nuitrack::DepthFrame::Ptr frame);
     void onHandUpdate(tdv::nuitrack::HandTrackerData::Ptr handData);
     void onSkeletonUpdate(tdv::nuitrack::SkeletonData::Ptr skeletonData);
     void onNewFace();
@@ -62,8 +65,9 @@ private:
     std::string type2string( const tdv::nuitrack::GestureType gesture_type );
 private:
     // Nuitracker
-    //sensor_msgs::PointCloud2 cloud_msg_; // color and depth point cloud
+    sensor_msgs::PointCloud2 cloud_msg; // color and depth point cloud    
     tdv::nuitrack::ColorSensor::Ptr colorSensor;
+    tdv::nuitrack::DepthSensor::Ptr depthSensor;
     tdv::nuitrack::HandTracker::Ptr handTracker;
     tdv::nuitrack::HandTrackerData::Ptr handData;
     tdv::nuitrack::GestureRecognizer::Ptr gestureRecognizer;
@@ -75,6 +79,8 @@ private:
     // nuitracker services and publishers
     ros::ServiceServer serviceSuspend;
     ros::Publisher colorImagePub;
+    ros::Publisher depthImagePub;
+    ros::Publisher depthCloudPub;
     ros::Publisher facePub;
     ros::Publisher gesturePub;
     ros::Publisher handPub;
@@ -83,6 +89,7 @@ private:
     // params
     double main_frame_rate;
     double face_frame_rate;
+    bool enable_depth;
 };
 
 }
