@@ -13,6 +13,7 @@ from audio_common_msgs.msg import AudioData
 from std_msgs.msg import Bool, Int32, ColorRGBA
 from contextlib import contextmanager
 
+from qt_respeaker_app.srv import *
 
 try:
     from pixel_ring import usb_pixel_ring_v2
@@ -100,7 +101,7 @@ class Tuning:
         try:
             data = self.PARAMETERS[name]
         except KeyError:
-            return
+            return False
 
         if data[5] == 'ro':
             raise ValueError('{} is read-only'.format(name))
@@ -116,12 +117,13 @@ class Tuning:
         self.dev.ctrl_transfer(
             usb.util.CTRL_OUT | usb.util.CTRL_TYPE_VENDOR | usb.util.CTRL_RECIPIENT_DEVICE,
             0, 0, id, payload, self.TIMEOUT)
+        return True
 
-    def read(self, name):
+    def read(self, name):        
         try:
             data = self.PARAMETERS[name]
         except KeyError:
-            return
+            return None
 
         id = data[0]
 
@@ -306,6 +308,41 @@ class RespeakerNode(object):
         self.info_timer = rospy.Timer(rospy.Duration(1.0 / self.update_rate),self.on_timer)
         self.timer_led = None
         #self.sub_led = rospy.Subscriber("qt_respeaker_app/status_led", ColorRGBA, self.on_status_led)
+
+        # start tuning services
+        self.tuning_set = rospy.Service('/qt_respeaker_app/tuning/set', tuning_set, self.tuning_set)        
+        self.tuning_get = rospy.Service('/qt_respeaker_app/tuning/get', tuning_get, self.tuning_get)
+
+
+    """
+        ros tuning set callback
+    """
+    def tuning_set(self, req):
+        resp = tuning_setResponse()
+        try:
+            ret = self.respeaker.tuning().write(req.param, req.value)
+            resp.status = ret            
+        except Exception as e:
+            rospy.logwarn(str(e))
+            resp.status = False
+        return resp            
+
+
+    """
+        ros tuning get callback
+    """
+    def tuning_get(self, req):
+        resp = tuning_getResponse()
+        try:
+            resp.value = self.respeaker.tuning().read(req.param)            
+            resp.status = False if resp.value is None else True
+            resp.value = 0 if not resp.value else resp.value
+        except Exception as e:
+            rospy.logwarn(str(e))
+            resp.value = 0
+            resp.status = False
+        return resp
+
 
     def on_shutdown(self):
         try:
