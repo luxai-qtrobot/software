@@ -13,7 +13,6 @@ from std_msgs.msg import String
 from audio_common_msgs.msg import AudioData
 from qt_gspeech_app.srv import *
 
-
 class MicrophoneStream(object):
 
     def __init__(self, buffer):
@@ -59,17 +58,17 @@ class QTrobotGoogleSpeech():
         self.aqueue = queue.Queue(maxsize=2000) # more than one minute         
         self.audio_rate = rospy.get_param("/qt_gspeech_app/audio_rate", 16000)
         self.language = rospy.get_param("/qt_gspeech_app/default_language", 'en-US')
-        self.model = rospy.get_param("/qt_gspeech_app/model", 'defualt')
+        self.model = rospy.get_param("/qt_gspeech_app/model", 'default')
         self.use_enhanced_model = rospy.get_param("/qt_gspeech_app/use_enhanced_model", False)
         
-        print(f"audio rate:{self.audio_rate}, defualt language:{self.language}, model:{self.model}, use_enhanced_model:{self.use_enhanced_model}")
+        print(f"audio rate:{self.audio_rate}, default language:{self.language}, model:{self.model}, use_enhanced_model:{self.use_enhanced_model}")
 
         # start recognize service
         self.speech_recognize = rospy.Service('/qt_robot/speech/recognize', speech_recognize, self.callback_recognize)        
         rospy.Subscriber('/qt_respeaker_app/channel0', AudioData, self.callback_audio_stream)
 
 
-    def callback_audio_stream(self, msg):                
+    def callback_audio_stream(self, msg): 
         indata = bytes(msg.data)           
         try:
             self.aqueue.put_nowait(indata)            
@@ -84,7 +83,8 @@ class QTrobotGoogleSpeech():
         print("options:", len(req.options), req.options)
         print("language:", req.language)
         print("timeout:", str(req.timeout))        
-        timeout = (req.timeout if (req.timeout != 0) else 15)
+        # timeout = (req.timeout if (req.timeout != 0) else 15)
+        timeout = req.timeout
         language = (req.language if (req.language != '') else self.language)
         language = language.replace("_", "-")
         options = list(filter(None, req.options)) # remove the empty options 
@@ -111,7 +111,7 @@ class QTrobotGoogleSpeech():
         # clear queue (keep the last second)
         if clear_queue:                        
             # self.aqueue.queue.clear()
-            # example : if audio rate is 16000 and respeaker buffersize is 512, then the last one second will be around 31 item in queue
+            # example : if audio rate is 16000 and respeaker buffersize is 512,then the last one second will be around 31 item in queue
             while self.aqueue.qsize() > int(self.audio_rate / 512 / 2):
                 self.aqueue.get()
 
@@ -132,7 +132,7 @@ class QTrobotGoogleSpeech():
                 language_code=str(language.strip()),
                 model=self.model,
                 use_enhanced=self.use_enhanced_model,
-                speech_contexts=[speech_context]
+                speech_contexts=[speech_context],
             )
         else:
             config = speech.RecognitionConfig(
@@ -140,24 +140,30 @@ class QTrobotGoogleSpeech():
                 sample_rate_hertz=self.audio_rate,
                 model=self.model,
                 use_enhanced=self.use_enhanced_model,
-                language_code= str(language.strip())
+                language_code= str(language.strip()),
+                enable_automatic_punctuation=True,
             )
-        
-        streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
+        streaming_config = speech.StreamingRecognitionConfig(
+            config=config,
+            interim_results=True,
+            enable_voice_activity_events=True, 
+            )
         with MicrophoneStream(self.aqueue) as mic:
+            start_time = time.time()
             audio_generator = mic.generator()
             requests = (
                 speech.StreamingRecognizeRequest(audio_content=content)
                 for content in audio_generator
             )
             try:
-                # print(requests)
-                responses = self.client.streaming_recognize(streaming_config, requests, timeout=timeout)
-                # print('responses', responses)
-                output = self.validate_response(responses, answer_context)
+                if timeout > 0 :
+                    responses = self.client.streaming_recognize(streaming_config, requests, timeout=timeout)
+                else:
+                    responses = self.client.streaming_recognize(streaming_config, requests)
+                output = self.validate_response(responses, answer_context, start_time, timeout)
             except:
                 output = ""
-                print("timeout")        
+                print("exception")     
 
         print("Detected [%s]" % (output))
         return output
@@ -166,16 +172,17 @@ class QTrobotGoogleSpeech():
     """
         looping over google responses
     """
-    def validate_response(self, responses, context):
+    def validate_response(self, responses, context, start_time, timeout):
         transcript = ""
         for response in responses:
+            print(response)
             if not response.results:
                 continue
             result = response.results[0]
             if not result.alternatives:
                 continue
             transcript = result.alternatives[0].transcript
-            print(transcript)
+
             if not result.is_final:
                 if context:
                     for option in context:
@@ -187,8 +194,7 @@ class QTrobotGoogleSpeech():
 
 
 if __name__ == "__main__":
-    rospy.init_node('qt_gspeech_app')
-                    
+    rospy.init_node('qt_gspeech_app')            
     gspeech = QTrobotGoogleSpeech()
     rospy.loginfo("qt_gspeech_app is ready!")
     rospy.spin()
