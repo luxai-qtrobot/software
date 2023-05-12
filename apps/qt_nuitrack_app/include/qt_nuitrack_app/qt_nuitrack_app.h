@@ -87,9 +87,12 @@ private:
     ros::Publisher skeletonPub;
 
     // params
+    double image_width;
+    double image_height;
     double main_frame_rate;
     double face_frame_rate;
     bool enable_depth;
+    bool enable_landmarks;
 };
 
 }

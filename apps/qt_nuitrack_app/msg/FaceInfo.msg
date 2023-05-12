@@ -15,3 +15,5 @@ float64[] left_eye
 float64[] right_eye
 #face orientation angles in degrees (yaw, pitch, roll)
 float64[] angles
+#face landmark array of anthropometric points (31 points). Normalized coordinates of each point (x, y).
+LandmarkInfo[] landmarks

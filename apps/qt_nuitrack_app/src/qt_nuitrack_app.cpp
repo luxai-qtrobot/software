@@ -20,20 +20,23 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
         ROS_ERROR_STREAM("Can not initialize Nuitrack (ExceptionType: " << e.type() << ")");
         ros::shutdown();
     }
-
-    std::string image_width, image_height;
+    
     if(!nh.getParam("/qt_nuitrack_app/image_width", image_width))
-        image_width = "640";
-
+        image_width = 640;
+        
     if(!nh.getParam("/qt_nuitrack_app/image_height", image_height))
-        image_height = "480";
+        image_height = 480;
 
     enable_depth = false;
     if(!nh.getParam("/qt_nuitrack_app/enable_depth", enable_depth))
         enable_depth = false;
+    
+    enable_landmarks = false;
+    if(!nh.getParam("/qt_nuitrack_app/enable_landmarks", enable_landmarks))
+        enable_landmarks = false;
 
-    tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessWidth", image_width );
-    tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessHeight", image_height );
+    tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessWidth", std::to_string(image_width));
+    tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessHeight", std::to_string(image_height));
     // Enable Face Module
     tdv::nuitrack::Nuitrack::setConfigValue( "Faces.ToUse", "true" );
     tdv::nuitrack::Nuitrack::setConfigValue( "DepthProvider.Depth2ColorRegistration", "true" );
@@ -112,7 +115,7 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
     ROS_INFO_STREAM("Satrting main loop:");
     ROS_INFO_STREAM("\tMain frame rate: "<<main_frame_rate);
     ROS_INFO_STREAM("\tFace frame rate: "<<face_frame_rate);
-    ROS_INFO_STREAM("\tCamera image size "<<image_width<<"x"<<image_width);
+    ROS_INFO_STREAM("\tCamera image size "<<image_width<<"x"<<image_height);
     ROS_INFO_STREAM("\tDepth camera enabled:"<<enable_depth);
 
     nuitrackTimer = nh.createTimer(ros::Duration(1.0/main_frame_rate),
@@ -123,7 +126,7 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
 QTNuitrackApp::~QTNuitrackApp() {
     // Release Nuitrack
     try {
-        ROS_INFO_STREAM("Releaasing Nuitrack...");
+        ROS_INFO_STREAM("Releasing Nuitrack...");
         Nuitrack::release();
     }
     catch (const Exception& e) {
@@ -233,14 +236,16 @@ void QTNuitrackApp::onNewDepthFrame(tdv::nuitrack::DepthFrame::Ptr frame) {
 
 void QTNuitrackApp::onNewFace() {
     json = parser::parse( tdv::nuitrack::Nuitrack::getInstancesJson());
-
+    
     qt_nuitrack_app::Faces msgFace;
     for( const parser::Human& human : json.humans ){
         if( !human.face ){
             continue;
         }
+        uint32_t id = 0;
         const parser::Face& face = human.face.get();
         qt_nuitrack_app::FaceInfo faceInfo;
+        qt_nuitrack_app::LandmarkInfo landmarkInfo;
         faceInfo.id = human.id;
         faceInfo.gender = face.gender;
         faceInfo.age_type = face.age.type;
@@ -260,7 +265,19 @@ void QTNuitrackApp::onNewFace() {
         faceInfo.angles.push_back(face.angles.yaw);
         faceInfo.angles.push_back(face.angles.pitch);
         faceInfo.angles.push_back(face.angles.roll);
+        if(enable_landmarks){
+            for( const parser::Vec& landmark : face.landmarks ){
+                landmarkInfo.id = id++;
+                landmarkInfo.x = landmark.x;
+                landmarkInfo.y = landmark.y;
+                faceInfo.landmarks.push_back(landmarkInfo);
+                // ROS_INFO_STREAM("\tlandmark["<< index++ <<"]:("<<landmark.x<<", "<<landmark.y <<")");
+            }
+        }    
+
+        
         msgFace.faces.push_back(faceInfo);
+        
         //ROS_INFO_STREAM("Human "<<human.id);
         //ROS_INFO_STREAM("\tGender: "<<face.gender);
         //ROS_INFO_STREAM("\tAge: "<<face.age.years);
