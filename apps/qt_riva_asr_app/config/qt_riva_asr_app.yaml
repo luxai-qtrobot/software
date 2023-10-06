@@ -1,0 +1,13 @@
+qt_riva_asr_app:
+  language_code: 'en-US' # 'en-US' 'de-DE'
+  audio_rate: 16000
+  file_streaming_chunk: 1600  
+  automatic_punctuation: true
+  profanity_filter: false
+  no_verbatim_transcripts: false
+  speaker_diarization: true
+  boosted_lm_words: []
+  boosted_lm_score: 4.0
+  server: 'localhost:50051'
+  use_ssl: false
+  # ssl_cert: ''

@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+  <rosparam file="$(find qt_riva_asr_app)/config/qt_riva_asr_app.yaml" command="load"/>
+  <!-- <remap from="qt_respeaker_app/channel0" to="qt_respeaker_app_ext/channel0"/> -->
+  <node pkg="qt_riva_asr_app" name="qt_riva_asr_app" type="qt_riva_asr_app_node.py"
+        output="screen" clear_params="true" respawn="true">
+  </node>
+</launch>
