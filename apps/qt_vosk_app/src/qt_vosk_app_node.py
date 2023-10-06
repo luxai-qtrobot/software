@@ -5,14 +5,17 @@ import time
 import rospy
 import json
 import vosk
-import pvporcupine
 from threading import Thread, Condition
 
 from std_msgs.msg import String
 from audio_common_msgs.msg import AudioData
 from qt_vosk_app.srv import *
 
-
+try:
+    import pvporcupine
+    SUPPORT_PORCUPINE = True
+except:
+    SUPPORT_PORCUPINE = False
 
 class QTrobotVoskSpeech(Thread):
     """QTrobot speech recognition using google cloud service"""
@@ -42,13 +45,19 @@ class QTrobotVoskSpeech(Thread):
         # Sensitivities for detecting keywords. Each value should be a number within [0, 1]. A higher 
         # sensitivity results in fewer misses at the cost of increasing the false alarm rate. If not set 0.5
         # will be used.
+
+
+
+        if self.enable_hotword and not SUPPORT_PORCUPINE:
+            self.enable_hotword = False
+            rospy.logwarn("hotword detection using porcupine is not supported! disabling hotword detection...")
+
         if self.enable_hotword:
             self.ppn = pvporcupine.create(keyword_paths=[self.hotword_model], access_key=self.access_key, sensitivities=[self.sensitivity]) 
             self.recognize_pub = rospy.Publisher('/qt_robot/speech/recognize', String, queue_size=10)
             if self.publish_hotword:
                 self.hotword_pub = rospy.Publisher('/qt_robot/speech/hotword', String, queue_size=1)
                 
-
         # start recognize service
         self.speech_recognize = rospy.Service('/qt_robot/speech/recognize', speech_recognize, self.callback_recognize)        
         rospy.Subscriber('/qt_respeaker_app/channel0', AudioData, self.callback_audio_stream)
