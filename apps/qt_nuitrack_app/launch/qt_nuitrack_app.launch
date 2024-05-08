@@ -4,6 +4,7 @@
   <param name="face_frame_rate" value="2"/>
   <param name="image_width" value="640"/>
   <param name="image_height" value="480"/>
+  <param name="enable_face" value="true"/>
   <param name="enable_depth" value="false"/>
   <param name="enable_landmarks" value="false"/>
   </node>

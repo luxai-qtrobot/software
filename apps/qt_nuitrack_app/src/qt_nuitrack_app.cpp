@@ -27,6 +27,11 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
     if(!nh.getParam("/qt_nuitrack_app/image_height", image_height))
         image_height = 480;
 
+
+    enable_face = false;
+    if(!nh.getParam("/qt_nuitrack_app/enable_face", enable_face))
+        enable_face = false;
+
     enable_depth = false;
     if(!nh.getParam("/qt_nuitrack_app/enable_depth", enable_depth))
         enable_depth = false;
@@ -37,10 +42,13 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
 
     tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessWidth", std::to_string(image_width));
     tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessHeight", std::to_string(image_height));
-    // Enable Face Module
-    tdv::nuitrack::Nuitrack::setConfigValue( "Faces.ToUse", "true" );
-    tdv::nuitrack::Nuitrack::setConfigValue( "DepthProvider.Depth2ColorRegistration", "true" );
 
+    
+    // Enable Face Module
+    if(enable_face) {
+        tdv::nuitrack::Nuitrack::setConfigValue( "Faces.ToUse", "true" );
+    }
+    
     // create Gesture
     gestureRecognizer = tdv::nuitrack::GestureRecognizer::create();
     gestureRecognizer->connectOnNewGestures(std::bind( &QTNuitrackApp::onNewGestures, this, std::placeholders::_1));
@@ -61,6 +69,7 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
 
     // Create depth sensor
     if(enable_depth) {
+        tdv::nuitrack::Nuitrack::setConfigValue( "DepthProvider.Depth2ColorRegistration", "true" );
         depthSensor = tdv::nuitrack::DepthSensor::create();
         tdv::nuitrack::OutputMode outputMode = depthSensor->getOutputMode();
         tdv::nuitrack::OutputMode colorOutputMode = colorSensor->getOutputMode();
@@ -99,10 +108,14 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
 
     serviceSuspend = nh.advertiseService("qt_nuitrack_app/suspend", &QTNuitrackApp::suspendCB, this);
     colorImagePub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
-    facePub = nh.advertise<qt_nuitrack_app::Faces>("/qt_nuitrack_app/faces", 1);
     gesturePub = nh.advertise<qt_nuitrack_app::Gestures>("/qt_nuitrack_app/gestures", 1);
     handPub = nh.advertise<qt_nuitrack_app::Hands>("/qt_nuitrack_app/hands", 1);
     skeletonPub = nh.advertise<qt_nuitrack_app::Skeletons>("/qt_nuitrack_app/skeletons", 10);
+
+    if(enable_face) {
+        facePub = nh.advertise<qt_nuitrack_app::Faces>("/qt_nuitrack_app/faces", 1);
+    }
+
     if(enable_depth) {
         depthImagePub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
         depthCloudPub = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/cloud", 1);
@@ -114,9 +127,14 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
         face_frame_rate  = 2;
     ROS_INFO_STREAM("Satrting main loop:");
     ROS_INFO_STREAM("\tMain frame rate: "<<main_frame_rate);
-    ROS_INFO_STREAM("\tFace frame rate: "<<face_frame_rate);
+    std::string str_bool = (enable_face) ? "yes" : "no";
+    ROS_INFO_STREAM("\tFacial features enabled: " << str_bool);
+    if(enable_face){
+        ROS_INFO_STREAM("\tFace frame rate: "<<face_frame_rate);
+    }
     ROS_INFO_STREAM("\tCamera image size "<<image_width<<"x"<<image_height);
-    ROS_INFO_STREAM("\tDepth camera enabled:"<<enable_depth);
+    str_bool = (enable_depth) ? "yes" : "no";
+    ROS_INFO_STREAM("\tDepth camera enabled: " << str_bool);
 
     nuitrackTimer = nh.createTimer(ros::Duration(1.0/main_frame_rate),
                                    &QTNuitrackApp::nuitrackTimerCallback, this);
@@ -149,11 +167,13 @@ void QTNuitrackApp::nuitrackTimerCallback(const ros::TimerEvent& event) {
         ros::shutdown();
     }
 
-    static ros::Time prev_update_face = ros::Time::now();
-    ros::Duration diff = ros::Time::now() - prev_update_face;
-    if(diff >= ros::Duration(1.0/face_frame_rate)) {
-        onNewFace();
-        prev_update_face = ros::Time::now();
+    if(enable_face) {
+        static ros::Time prev_update_face = ros::Time::now();
+        ros::Duration diff = ros::Time::now() - prev_update_face;
+        if(diff >= ros::Duration(1.0/face_frame_rate)) {
+            onNewFace();
+            prev_update_face = ros::Time::now();
+        }
     }
 }
 

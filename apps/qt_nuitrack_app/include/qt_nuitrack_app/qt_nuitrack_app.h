@@ -91,6 +91,7 @@ private:
     double image_height;
     double main_frame_rate;
     double face_frame_rate;
+    bool enable_face;
     bool enable_depth;
     bool enable_landmarks;
 };
