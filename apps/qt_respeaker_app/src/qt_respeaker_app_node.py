@@ -292,7 +292,7 @@ class RespeakerNode(object):
     def __init__(self):
         rospy.on_shutdown(self.on_shutdown)
 
-        self.update_rate = rospy.get_param("/qt_respeaker_app/update_rate", 10.0)
+        self.update_rate = rospy.get_param("/qt_respeaker_app/update_rate", 100.0)
         suppress_pyaudio_error = rospy.get_param("/qt_respeaker_app/suppress_pyaudio_error", True)
         
         self.respeaker = RespeakerInterface()
@@ -371,7 +371,7 @@ class RespeakerNode(object):
         self.pub_audios[channel].publish(AudioData(data=data))
 
     def on_timer(self, event):
-        try:
+        try:            
             is_voice = self.respeaker.tuning().is_voice()
             if is_voice:
                 self.pub_doa.publish(self.respeaker.tuning().direction)
