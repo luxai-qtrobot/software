@@ -3,8 +3,8 @@ qt_respeaker_app:
   suppress_pyaudio_error : true 
   # mic_device_id: 2
   tuning:
-    AGCONOFF: 0
-    AGCGAIN: 50.0
+    AGCONOFF: 1
+    AGCGAIN: 30.0
     STATNOISEONOFF_SR: 1
     MIN_NS_SR: 0.01
     GAMMA_NS_SR: 1.80
