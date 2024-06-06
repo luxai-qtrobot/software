@@ -29,6 +29,7 @@ add_service_files(
   audio_stop.srv
   emotion_show.srv
   emotion_stop.srv
+  emotion_look.srv
   behavior_talk_audio.srv
   behavior_talk_text.srv
   setting_setVolume.srv
