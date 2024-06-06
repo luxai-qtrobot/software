@@ -1,0 +1,6 @@
+# displacemnt (x, y) of left and right eye from center
+int16[]  eye_l
+int16[]  eye_r
+float32  duration 
+---
+bool status

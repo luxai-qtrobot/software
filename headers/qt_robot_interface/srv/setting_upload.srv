@@ -1,5 +1,6 @@
 string data
 string filepath
 string permission
+bool append
 ---
 bool status
