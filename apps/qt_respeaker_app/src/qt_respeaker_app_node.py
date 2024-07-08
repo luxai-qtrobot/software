@@ -187,7 +187,9 @@ class RespeakerInterface(object):
                 self.device_tuning.write(str(parameter), rospy.get_param(p))
                 rospy.loginfo("Set parameter %s : %s", parameter, str(rospy.get_param(p)))
         rospy.loginfo("Respeaker device initialized (Version: %s)" % self.device_tuning.version)
-        
+
+        self.set_led_trace()
+
 
     def __del__(self):
         try:
@@ -198,24 +200,26 @@ class RespeakerInterface(object):
     def tuning(self):
         return self.device_tuning
     
-    #def set_led_think(self):
-    #    self.pixel_ring.set_brightness(10)
-    #    self.pixel_ring.think()
-    #
-    #def set_led_trace(self):
-    #    self.pixel_ring.set_brightness(10)
-    #    self.pixel_ring.trace()
-    #
-    #def set_led_listen(self):
-    #    self.pixel_ring.set_brightness(10)
-    #    self.pixel_ring.listen()
-    #
-    #def set_led_spin(self):
-    #    self.pixel_ring.set_brightness(10)
-    #    self.pixel_ring.spin()
-    #def set_led_color(self, r, g, b, a):
-    #    self.pixel_ring.set_brightness(int(20 * a))
-    #    self.pixel_ring.set_color(r=int(r*255), g=int(g*255), b=int(b*255))
+    def set_led_think(self):
+        self.pixel_ring.set_brightness(10)
+        self.pixel_ring.think()
+    
+    def set_led_trace(self):
+        self.pixel_ring.set_brightness(10)
+        self.pixel_ring.trace()
+    
+    def set_led_listen(self):
+        self.pixel_ring.set_brightness(10)
+        self.pixel_ring.listen()
+    
+    def set_led_spin(self):
+        self.pixel_ring.set_brightness(10)
+        self.pixel_ring.spin()
+
+    def set_led_color(self, r, g, b, a):
+        # print('set_led_color', r, g, b, a)
+        self.pixel_ring.set_brightness(int(20 * a))
+        self.pixel_ring.set_color(r=int(r*255), g=int(g*255), b=int(b*255))
 
 
 class RespeakerAudio(object):
@@ -307,7 +311,7 @@ class RespeakerNode(object):
         self.respeaker_audio.start()
         self.info_timer = rospy.Timer(rospy.Duration(1.0 / self.update_rate),self.on_timer)
         self.timer_led = None
-        #self.sub_led = rospy.Subscriber("qt_respeaker_app/status_led", ColorRGBA, self.on_status_led)
+        self.sub_led = rospy.Subscriber("qt_respeaker_app/status_led", ColorRGBA, self.on_status_led)
 
         # start tuning services
         self.tuning_set = rospy.Service('/qt_respeaker_app/tuning/set', tuning_set, self.tuning_set)        
@@ -359,13 +363,18 @@ class RespeakerNode(object):
             self.respeaker_audio = None
     
 
-    #def on_status_led(self, msg):
-    #    self.respeaker.set_led_color(r=msg.r, g=msg.g, b=msg.b, a=msg.a)
+    def on_status_led(self, msg):        
+        if msg.r==0 and msg.g==0 and msg.b==0 and msg.a==0: 
+            self.respeaker.set_led_trace()
+        else:
+            self.respeaker.set_led_color(r=msg.r, g=msg.g, b=msg.b, a=msg.a)
+
     #    if self.timer_led and self.timer_led.is_alive():
     #        self.timer_led.shutdown()
     #    self.timer_led = rospy.Timer(rospy.Duration(3.0),
     #                                   lambda e: self.respeaker.set_led_trace(),
     #                                   oneshot=True)
+
 
     def on_audio(self, data, channel):
         self.pub_audios[channel].publish(AudioData(data=data))
