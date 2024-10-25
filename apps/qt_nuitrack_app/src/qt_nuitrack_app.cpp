@@ -42,13 +42,13 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
 
     tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessWidth", std::to_string(image_width));
     tdv::nuitrack::Nuitrack::setConfigValue( "Realsense2Module.RGB.ProcessHeight", std::to_string(image_height));
+    tdv::nuitrack::Nuitrack::setConfigValue( "Faces.ToUse", "true" );    
+    if(enable_depth) {     
+        tdv::nuitrack::Nuitrack::setConfigValue( "DepthProvider.Depth2ColorRegistration", "true" );   
+    }
 
     
-    // Enable Face Module
-    if(enable_face) {
-        tdv::nuitrack::Nuitrack::setConfigValue( "Faces.ToUse", "true" );
-    }
-    
+        
     // create Gesture
     gestureRecognizer = tdv::nuitrack::GestureRecognizer::create();
     gestureRecognizer->connectOnNewGestures(std::bind( &QTNuitrackApp::onNewGestures, this, std::placeholders::_1));
@@ -68,8 +68,7 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
 
 
     // Create depth sensor
-    if(enable_depth) {
-        tdv::nuitrack::Nuitrack::setConfigValue( "DepthProvider.Depth2ColorRegistration", "true" );
+    if(enable_depth) {     
         depthSensor = tdv::nuitrack::DepthSensor::create();
         tdv::nuitrack::OutputMode outputMode = depthSensor->getOutputMode();
         tdv::nuitrack::OutputMode colorOutputMode = colorSensor->getOutputMode();
@@ -107,7 +106,7 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
     }
 
     serviceSuspend = nh.advertiseService("qt_nuitrack_app/suspend", &QTNuitrackApp::suspendCB, this);
-    colorImagePub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
+    colorImagePub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 10);
     gesturePub = nh.advertise<qt_nuitrack_app::Gestures>("/qt_nuitrack_app/gestures", 1);
     handPub = nh.advertise<qt_nuitrack_app::Hands>("/qt_nuitrack_app/hands", 1);
     skeletonPub = nh.advertise<qt_nuitrack_app::Skeletons>("/qt_nuitrack_app/skeletons", 10);
@@ -117,8 +116,8 @@ QTNuitrackApp::QTNuitrackApp(ros::NodeHandle& nh) {
     }
 
     if(enable_depth) {
-        depthImagePub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
-        depthCloudPub = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/cloud", 1);
+        depthImagePub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 10);
+        depthCloudPub = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/cloud", 10);
     }
 
     if(!nh.getParam("/qt_nuitrack_app/main_frame_rate", main_frame_rate))
