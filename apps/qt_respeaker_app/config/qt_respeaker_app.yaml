@@ -9,4 +9,9 @@ qt_respeaker_app:
     MIN_NS_SR: 0.01
     GAMMA_NS_SR: 1.80
     CNIONOFF: 0
-    
+
+  external_mic:
+    enable: false       # enable streaming from external mic along with respeaker
+    device_name: ""     # device name of external mic, use arecord -l to list all devices
+    enfrorce_16k: true  # if true, will resample the external mic to 16kHz (needed for most ASR)
+  

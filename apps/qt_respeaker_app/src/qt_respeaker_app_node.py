@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
 import os
+import sys
+from contextlib import contextmanager
+
 import rospy
 import struct
-import sys
-import time
 import usb.core
 import usb.util
 import pyaudio
+import audioop
 import numpy as np
+import math
 from audio_common_msgs.msg import AudioData
 from std_msgs.msg import Bool, Int32, ColorRGBA
-from contextlib import contextmanager
 
 from qt_respeaker_app.srv import *
 
@@ -20,6 +22,8 @@ try:
 except IOError as e:
     print(e)
     raise RuntimeError("Check the device is connected and recognized")
+
+
 
 @contextmanager
 def ignore_stderr(enable=True):
@@ -40,7 +44,6 @@ def ignore_stderr(enable=True):
                 os.close(devnull)
     else:
         yield
-
 
 
 
@@ -170,6 +173,127 @@ class Tuning:
 
 
 
+class ExternalMicAudio(object):
+    def __init__(self, device_name, on_audio, channels=1, enforce_16k=False):
+        self.on_audio = on_audio
+        self.device_name = device_name
+        self.channels = int(channels)
+        self.enforce_16k = bool(enforce_16k)
+
+        with ignore_stderr(enable=True):
+            self.pyaudio = pyaudio.PyAudio()
+
+        device_index, default_sr = self.get_external_mic_device()
+        self.input_rate = self._choose_supported_rate(device_index, [16000, 48000, 44100, int(default_sr)])
+        self.output_rate = 16000 if self.enforce_16k else self.input_rate
+        self.do_resample = self.enforce_16k and (self.input_rate != 16000)
+        self.bitwidth = 2
+
+        # --- Option A: pick input frames so output ≈ desired_out_frames ---
+        self.desired_out_frames = 512
+        frames_in = math.ceil(self.desired_out_frames * self.input_rate / self.output_rate)
+
+        # Resampler state + per-channel output buffers (Option B)
+        self._resample_states = [None] * self.channels if self.do_resample else None
+        self._outbuf = [bytearray() for _ in range(self.channels)]
+        self._chunk_bytes = self.desired_out_frames * self.bitwidth  # per channel
+
+        self.stream = self.pyaudio.open(
+            input=True, start=False, format=pyaudio.paInt16,
+            channels=self.channels, rate=int(self.input_rate),
+            frames_per_buffer=int(frames_in),
+            stream_callback=self.stream_callback,
+            input_device_index=int(device_index),
+        )
+
+    def _supports_rate(self, device_index, rate):
+        try:
+            self.pyaudio.is_format_supported(
+                rate=int(rate),
+                input_device=int(device_index),
+                input_channels=self.channels,
+                input_format=pyaudio.paInt16
+            )
+            return True
+        except ValueError:
+            return False
+
+    def _choose_supported_rate(self, device_index, preferred_rates):
+        for r in preferred_rates:
+            if self._supports_rate(device_index, r):
+                return int(r)
+        # last resort: try a few common fallbacks
+        for r in (48000, 44100, 32000, 22050, 16000):
+            if self._supports_rate(device_index, r):
+                return int(r)
+        # absolute fallback: device's reported default
+        return int(self.pyaudio.get_device_info_by_index(int(device_index))['defaultSampleRate'])
+
+    def get_external_mic_device(self):
+        info = self.pyaudio.get_host_api_info_by_index(0)
+        numdevices = info.get('deviceCount')
+        for i in range(numdevices):
+            dev = self.pyaudio.get_device_info_by_host_api_device_index(0, i)
+            if dev.get('maxInputChannels', 0) > 0 and self.device_name in dev.get('name', ''):
+                return int(dev.get('index')), int(dev.get('defaultSampleRate'))
+        return None
+
+    def __del__(self):
+        try:
+            self.stop()
+        except:
+            pass
+        try:
+            self.stream.close()
+        except:
+            pass
+        finally:
+            self.stream = None
+        try:
+            self.pyaudio.terminate()
+        except:
+            pass
+
+    def stream_callback(self, in_data, frame_count, time_info, status):
+        samples = np.frombuffer(in_data, dtype=np.int16)
+
+        if self.channels == 1:
+            # mono fast path
+            if self.do_resample:
+                out, self._resample_states[0] = audioop.ratecv(
+                    in_data, self.bitwidth, 1, self.input_rate, self.output_rate, self._resample_states[0]
+                )
+            else:
+                out = in_data
+            self._outbuf[0].extend(out)
+            while len(self._outbuf[0]) >= self._chunk_bytes:
+                chunk = bytes(self._outbuf[0][:self._chunk_bytes])
+                del self._outbuf[0][:self._chunk_bytes]
+                self.on_audio(chunk, 0)
+            return (None, pyaudio.paContinue)
+
+        # multi-channel
+        for ch in range(self.channels):
+            ch_bytes = samples[ch::self.channels].tobytes()
+            if self.do_resample:
+                ch_bytes, self._resample_states[ch] = audioop.ratecv(
+                    ch_bytes, self.bitwidth, 1, self.input_rate, self.output_rate, self._resample_states[ch]
+                )
+            self._outbuf[ch].extend(ch_bytes)
+            while len(self._outbuf[ch]) >= self._chunk_bytes:
+                chunk = bytes(self._outbuf[ch][:self._chunk_bytes])
+                del self._outbuf[ch][:self._chunk_bytes]
+                self.on_audio(chunk, ch)
+        return (None, pyaudio.paContinue)
+
+    def start(self):
+        if self.stream.is_stopped():
+            self.stream.start_stream()
+
+    def stop(self):
+        if self.stream.is_active():
+            self.stream.stop_stream()
+
 
 class RespeakerInterface(object):
 
@@ -236,7 +360,7 @@ class RespeakerAudio(object):
 
         # # find respeaker mic
         self.device_index  = self.get_respeaker_device()  
-        rospy.loginfo("Using microphone device %d", self.device_index)
+        rospy.loginfo("Using internal microphone device ReSpeaker 4 Mic Array (%d) @ 16000Hz", self.device_index)        
         if self.channels is None:
             self.channels = range(self.available_channels)
         else:
@@ -302,11 +426,13 @@ class RespeakerNode(object):
         self.respeaker = RespeakerInterface()
         self.respeaker_audio = RespeakerAudio(self.on_audio, suppress_error=suppress_pyaudio_error)
         self.is_speaking = False
+
         # advertise
         self.pub_vad = rospy.Publisher("qt_respeaker_app/is_speaking", Bool, queue_size=1, latch=True)
         self.pub_doa = rospy.Publisher("qt_respeaker_app/sound_direction", Int32, queue_size=1, latch=True)
         self.pub_audios = {c: rospy.Publisher('qt_respeaker_app/channel%d' % c, AudioData, queue_size=10) for c in self.respeaker_audio.channels}
-                
+        
+
         # start
         self.respeaker_audio.start()
         self.info_timer = rospy.Timer(rospy.Duration(1.0 / self.update_rate),self.on_timer)
@@ -316,6 +442,24 @@ class RespeakerNode(object):
         # start tuning services
         self.tuning_set = rospy.Service('/qt_respeaker_app/tuning/set', tuning_set, self.tuning_set)        
         self.tuning_get = rospy.Service('/qt_respeaker_app/tuning/get', tuning_get, self.tuning_get)
+
+
+        # check if external mic is used
+        self.external_audio = None
+        use_external_mic = rospy.get_param("/qt_respeaker_app/external_mic/enable", False)
+        if use_external_mic:
+            device_name = rospy.get_param("/qt_respeaker_app/external_mic/device_name", None)
+            enfrorce_16k = rospy.get_param("/qt_respeaker_app/external_mic/enfrorce_16k", False)
+            if not device_name:
+                rospy.logwarn("External mic is enabled but device name is not set")
+            else:
+                try:
+                    self.external_audio = ExternalMicAudio(device_name, self.on_external_audio, channels=1, enforce_16k=enfrorce_16k)
+                    self.pub_external = rospy.Publisher('qt_respeaker_app/external1', AudioData, queue_size=10)
+                    self.external_audio.start()
+                except Exception as e:
+                    self.external_audio = None
+                    rospy.logwarn(f"Failed to initialize external microphone: {e}")
 
 
     """
@@ -357,10 +501,13 @@ class RespeakerNode(object):
             self.respeaker = None
         try:
             self.respeaker_audio.stop()
+            if self.external_audio:
+                self.external_audio.stop()
         except:
             pass
         finally:
             self.respeaker_audio = None
+            self.external_audio = None
     
 
     def on_status_led(self, msg):        
@@ -378,6 +525,9 @@ class RespeakerNode(object):
 
     def on_audio(self, data, channel):
         self.pub_audios[channel].publish(AudioData(data=data))
+
+    def on_external_audio(self, data, channel):
+        self.pub_external.publish(AudioData(data=data))
 
     def on_timer(self, event):
         try:            
