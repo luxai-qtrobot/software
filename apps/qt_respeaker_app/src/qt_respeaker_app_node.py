@@ -197,7 +197,8 @@ class ExternalMicAudio(object):
         self._resample_states = [None] * self.channels if self.do_resample else None
         self._outbuf = [bytearray() for _ in range(self.channels)]
         self._chunk_bytes = self.desired_out_frames * self.bitwidth  # per channel
-
+        
+        rospy.loginfo(f"Using external microphone device {self.device_name} ({device_index}) @ {self.output_rate}Hz.")
         self.stream = self.pyaudio.open(
             input=True, start=False, format=pyaudio.paInt16,
             channels=self.channels, rate=int(self.input_rate),
@@ -364,8 +365,7 @@ class RespeakerAudio(object):
         if self.channels is None:
             self.channels = range(self.available_channels)
         else:
-            self.channels = filter(lambda c: 0 <= c < self.available_channels, self.channels)
-        
+            self.channels = filter(lambda c: 0 <= c < self.available_channels, self.channels)        
         self.stream = self.pyaudio.open(
             input=True, start=False,
             format=pyaudio.paInt16,
